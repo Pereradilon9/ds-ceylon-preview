@@ -1,0 +1,1099 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>DS Ceylon Adventures — Private round tours of Sri Lanka</title>
+<meta name="description" content="Private chauffeur-guided round tours of Sri Lanka. Compare journeys, follow the 14-day Grand Round Tour day by day on a 3D map, and estimate your price.">
+<meta name="color-scheme" content="light dark">
+<script>(function(){try{var p=localStorage.getItem("dsc_theme")||"system";var d=p==="dark"||(p==="system"&&matchMedia("(prefers-color-scheme: dark)").matches);document.documentElement.dataset.theme=d?"dark":"light"}catch(e){}})()</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="vendor/maplibre-gl.css">
+<style>
+/* =========================================================
+   DS CEYLON — v3
+   Editorial luxury operator. References: Lightship (nav, hero, footer),
+   Scott Dunn (enquiry-first IA, four steps), IntegratedBio (numbered list),
+   Transit trip view (day timeline), AERIVE (closing enquiry), GetYourGuide (dark).
+   ========================================================= */
+:root{
+  --sans:"Geist",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"Geist Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+  --pad:clamp(20px,4vw,48px); --max:1360px;
+  --ease:cubic-bezier(.22,.8,.18,1);
+}
+[data-theme="light"]{
+  --bg:#F3F0EA; --bg2:#EAE6DE; --surface:#FBFAF7; --ink:#121212; --ink2:#5B5954; --ink3:#8C8981;
+  --line:rgba(18,18,18,.12); --line2:rgba(18,18,18,.07);
+  --accent:#9C7A3C; --btn:#121212; --on-btn:#FBFAF7; --ok:#2F6B4F; --bad:#A1402B;
+  --glass:rgba(251,250,247,.78); --shadow:0 20px 50px -20px rgba(18,18,18,.25);
+}
+[data-theme="dark"]{
+  --bg:#0E0F0F; --bg2:#151616; --surface:#1A1B1B; --ink:#EEEAE3; --ink2:#A29E96; --ink3:#6E6B66;
+  --line:rgba(238,234,227,.13); --line2:rgba(238,234,227,.07);
+  --accent:#D2B06E; --btn:#EEEAE3; --on-btn:#0E0F0F; --ok:#7CC39E; --bad:#E39A86;
+  --glass:rgba(20,21,21,.72); --shadow:0 20px 50px -20px rgba(0,0,0,.7);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.55 var(--sans);-webkit-font-smoothing:antialiased;transition:background .3s,color .3s}
+img{display:block;max-width:100%}
+a{color:inherit;text-decoration:none}
+button,input,select,textarea{font:inherit;color:inherit}
+button{background:none;border:0;padding:0;cursor:pointer}
+:focus-visible{outline:1.5px solid var(--accent);outline-offset:3px}
+::selection{background:var(--accent);color:#fff}
+.wrap{max-width:calc(var(--max) + var(--pad)*2);margin:0 auto;padding:0 var(--pad)}
+.mono{font-family:var(--mono);font-size:12px;letter-spacing:.04em;text-transform:uppercase}
+.muted{color:var(--ink2)}
+.ico{width:18px;height:18px;flex:none;stroke:currentColor;fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+
+/* buttons */
+.btn{display:inline-flex;align-items:center;gap:10px;height:46px;padding:0 22px;border-radius:999px;font-size:15px;font-weight:500;white-space:nowrap;transition:background .2s,color .2s,border-color .2s,transform .2s}
+.btn .ico{transition:transform .3s var(--ease)}
+.btn:hover .ico{transform:translateX(3px)}
+.btn-solid{background:var(--btn);color:var(--on-btn)}
+.btn-line{border:1px solid var(--line);}
+.btn-line:hover{border-color:var(--ink)}
+.btn-light{background:#FBFAF7;color:#121212}
+.btn-glass{background:rgba(255,255,255,.14);color:#fff;border:1px solid rgba(255,255,255,.28);backdrop-filter:blur(10px)}
+.btn-glass:hover{background:rgba(255,255,255,.24)}
+.link{display:inline-flex;align-items:center;gap:8px;font-weight:500;border-bottom:1px solid var(--line);padding-bottom:2px;transition:border-color .2s}
+.link:hover{border-color:var(--ink)}
+
+/* =========================== NAV (Lightship floating bar) */
+.nav{position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:60;width:min(calc(100% - 28px),1180px);height:58px;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:0 8px 0 18px;border-radius:16px;background:var(--glass);backdrop-filter:saturate(1.4) blur(18px);-webkit-backdrop-filter:saturate(1.4) blur(18px);border:1px solid var(--line2);transition:background .3s,color .3s,border-color .3s}
+.nav.on-hero{background:rgba(10,10,10,.18);border-color:rgba(255,255,255,.14);color:#fff}
+.nav .brand{display:flex;align-items:center;gap:10px;justify-self:start}
+.nav .brand img{height:30px;width:auto}
+.nav .l-dark{display:none}
+.nav.on-hero .l-light,[data-theme="dark"] .nav .l-light{display:none}
+.nav.on-hero .l-dark,[data-theme="dark"] .nav .l-dark{display:block}
+.links{display:flex;gap:2px}
+.links a{font-size:14px;padding:8px 13px;border-radius:10px;opacity:.78;transition:opacity .2s,background .2s;position:relative}
+.links a:hover{opacity:1}
+.links a.on{opacity:1}
+.links a.on:after{content:"";position:absolute;left:13px;right:13px;bottom:3px;height:1px;background:currentColor}
+.nav-r{justify-self:end;display:flex;align-items:center;gap:6px}
+.icon-btn{width:40px;height:40px;border-radius:10px;display:grid;place-items:center;transition:background .2s}
+.icon-btn:hover{background:var(--line2)}
+.nav.on-hero .icon-btn:hover{background:rgba(255,255,255,.12)}
+.theme .moon{display:none}[data-theme="dark"] .theme .sun{display:none}[data-theme="dark"] .theme .moon{display:block}
+.nav .btn{height:42px;padding:0 18px;font-size:14px}
+.nav.on-hero .btn-solid{background:#FBFAF7;color:#121212}
+.menu-btn{display:none}
+
+/* full-screen menu (mobile) */
+.sheet-menu{position:fixed;inset:0;z-index:70;background:var(--bg);padding:90px var(--pad) 32px;display:flex;flex-direction:column;opacity:0;pointer-events:none;transition:opacity .3s}
+.sheet-menu.on{opacity:1;pointer-events:auto}
+.sheet-menu a.big{display:flex;align-items:baseline;gap:16px;font-size:34px;font-weight:400;letter-spacing:-.02em;padding:12px 0;border-bottom:1px solid var(--line)}
+.sheet-menu a.big span{font-family:var(--mono);font-size:12px;color:var(--ink3)}
+.sheet-menu .foot{margin-top:auto;display:grid;gap:10px}
+
+/* =========================== HERO */
+.hero{position:relative;height:100svh;min-height:640px;color:#fff;overflow:hidden;background:#111}
+.hero-img{position:absolute;inset:0;background-size:cover;background-position:center 40%;transform:scale(1.08);animation:drift 22s var(--ease) forwards}
+@keyframes drift{to{transform:scale(1)}}
+.hero:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.38) 0%,rgba(0,0,0,0) 28%,rgba(0,0,0,.05) 55%,rgba(0,0,0,.62) 100%)}
+.hero-in{position:relative;z-index:2;height:100%;display:flex;flex-direction:column;justify-content:flex-end;padding-bottom:40px}
+.hero h1{font-weight:400;font-size:clamp(52px,9.2vw,148px);line-height:.92;letter-spacing:-.045em;margin:14px 0 0;max-width:12ch}
+.hero-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,520px);gap:40px;align-items:end;margin-top:36px}
+.hero p.lede{font-size:18px;line-height:1.5;max-width:460px;margin:0;color:rgba(255,255,255,.88)}
+.hero .ctas{display:flex;gap:10px;margin-top:24px;flex-wrap:wrap}
+.planner{background:rgba(14,14,14,.42);backdrop-filter:blur(22px) saturate(1.3);-webkit-backdrop-filter:blur(22px) saturate(1.3);border:1px solid rgba(255,255,255,.16);border-radius:18px;padding:8px}
+.planner .ph{display:flex;justify-content:space-between;padding:8px 12px 10px;color:rgba(255,255,255,.72)}
+.pf{display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:4px}
+.pf label{position:relative;display:flex;flex-direction:column;justify-content:center;padding:10px 14px;border-radius:12px;background:rgba(255,255,255,.08);transition:background .2s;cursor:pointer;min-width:0}
+.pf label:hover{background:rgba(255,255,255,.14)}
+.pf label span{font-size:11px;color:rgba(255,255,255,.62);font-family:var(--mono);text-transform:uppercase;letter-spacing:.05em}
+.pf select{appearance:none;-webkit-appearance:none;background:transparent;border:0;color:#fff;font-size:15px;padding:2px 0 0;cursor:pointer;outline:none;width:100%}
+.pf select option{color:#121212}
+.pf button{height:auto;border-radius:12px;padding:0 20px;background:#FBFAF7;color:#121212;font-weight:500;display:flex;align-items:center;gap:8px}
+.hero-meta{display:flex;justify-content:space-between;align-items:center;gap:20px;border-top:1px solid rgba(255,255,255,.22);margin-top:32px;padding-top:16px;color:rgba(255,255,255,.75)}
+.hero-meta .facts{display:flex;gap:28px;flex-wrap:wrap}
+.scroll-cue{display:flex;align-items:center;gap:10px}
+.scroll-cue i{display:block;width:1px;height:28px;background:rgba(255,255,255,.35);position:relative;overflow:hidden}
+.scroll-cue i:after{content:"";position:absolute;left:0;top:-40%;width:1px;height:40%;background:#fff;animation:cue 2s var(--ease) infinite}
+@keyframes cue{to{top:100%}}
+
+/* =========================== SECTIONS */
+.sec{padding:clamp(80px,11vw,160px) 0}
+.sec-h{display:grid;grid-template-columns:200px minmax(0,1fr) auto;gap:24px;align-items:end;margin-bottom:clamp(36px,5vw,64px)}
+.sec-h>*{min-width:0}
+@media (max-width:720px){.sec-h{grid-template-columns:minmax(0,1fr)!important}.filters{max-width:100%;overflow-x:auto}.filters button{white-space:nowrap;flex:none}}
+.sec-h .num{color:var(--ink3);align-self:start;padding-top:12px}
+.h2{font-size:clamp(38px,5.4vw,76px);font-weight:400;letter-spacing:-.04em;line-height:.98;margin:0;max-width:16ch}
+.sec-h p{margin:16px 0 0;color:var(--ink2);max-width:520px;font-size:17px}
+.rule{border:0;border-top:1px solid var(--line);margin:0}
+
+/* =========================== JOURNEYS */
+.filters{display:flex;gap:4px;padding:4px;border:1px solid var(--line);border-radius:999px}
+.filters button{height:36px;padding:0 14px;border-radius:999px;font-size:14px;color:var(--ink2);transition:all .2s}
+.filters button[aria-pressed="true"]{background:var(--btn);color:var(--on-btn)}
+.feature{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(0,1fr);gap:0;border:1px solid var(--line);border-radius:22px;overflow:hidden;background:var(--surface);margin-bottom:20px}
+.feature .fi{position:relative;min-height:560px;overflow:hidden}
+.feature .fi img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:transform 1.2s var(--ease)}
+.feature:hover .fi img{transform:scale(1.03)}
+.feature .fi .tag{position:absolute;left:18px;top:18px;background:rgba(14,14,14,.5);backdrop-filter:blur(10px);color:#fff;border-radius:999px;padding:7px 12px}
+.feature .fb{padding:clamp(28px,3.4vw,48px);display:flex;flex-direction:column}
+.feature h3{font-size:clamp(32px,3.4vw,48px);font-weight:400;letter-spacing:-.035em;line-height:1;margin:14px 0 16px}
+.feature .fb p{color:var(--ink2);margin:0 0 26px;max-width:440px}
+.stops{list-style:none;margin:0 0 28px;padding:0;display:flex;flex-wrap:wrap;gap:6px}
+.stops li{font-size:13px;padding:5px 10px;border:1px solid var(--line);border-radius:999px;color:var(--ink2)}
+.kvs{display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid var(--line);margin-top:auto}
+.kvs div{padding:16px 0}
+.kvs div+div{padding-left:16px;border-left:1px solid var(--line)}
+.kvs b{display:block;font-weight:500;font-size:20px;letter-spacing:-.02em}
+.feature .ctas{display:flex;gap:10px;margin-top:22px;flex-wrap:wrap}
+.jgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:20px}
+.jcard{display:flex;flex-direction:column;text-align:left;cursor:pointer;transition:opacity .3s}
+.jcard .ji{position:relative;aspect-ratio:4/5;border-radius:16px;overflow:hidden;background:var(--bg2)}
+.jcard .ji img{width:100%;height:100%;object-fit:cover;transition:transform 1s var(--ease)}
+.jcard:hover .ji img{transform:scale(1.05)}
+.jcard .ji .tag{position:absolute;left:14px;top:14px;background:rgba(14,14,14,.48);backdrop-filter:blur(10px);color:#fff;border-radius:999px;padding:6px 11px}
+.jcard .ji .go{position:absolute;right:14px;bottom:14px;width:42px;height:42px;border-radius:50%;background:#FBFAF7;color:#121212;display:grid;place-items:center;transform:translateY(8px);opacity:0;transition:all .35s var(--ease)}
+.jcard:hover .ji .go{transform:none;opacity:1}
+.jcard h4{font-size:22px;font-weight:400;letter-spacing:-.025em;margin:16px 0 6px}
+.jcard .r{font-size:14px;color:var(--ink2)}
+.jcard .p{display:flex;justify-content:space-between;margin-top:12px;padding-top:12px;border-top:1px solid var(--line);font-size:14px}
+.jcard.hide{display:none}
+.match-note{display:none;align-items:center;gap:12px;margin-bottom:20px;padding:14px 18px;border:1px solid var(--accent);border-radius:14px;font-size:15px}
+.match-note.on{display:flex}
+.match-note button{margin-left:auto;color:var(--ink2);font-size:14px}
+.is-match{outline:1.5px solid var(--accent);outline-offset:6px;border-radius:18px}
+
+/* =========================== DAY BY DAY (scrollytelling map) */
+.dbd{background:var(--bg2)}
+.story{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:clamp(24px,4vw,64px)}
+.map-wrap{position:sticky;top:86px;height:calc(100svh - 110px);border-radius:22px;overflow:hidden;background:#0d1a14}
+#map{position:absolute;inset:0}
+.map-hud{position:absolute;left:16px;top:16px;right:16px;display:flex;justify-content:space-between;align-items:flex-start;pointer-events:none;z-index:2}
+.hud-day{background:rgba(12,12,12,.6);backdrop-filter:blur(12px);color:#fff;border-radius:14px;padding:12px 16px;pointer-events:auto}
+.hud-day b{display:block;font-size:20px;font-weight:400;letter-spacing:-.02em;margin-top:2px}
+.hud-ctl{display:flex;gap:6px;pointer-events:auto}
+.hud-ctl button{height:38px;padding:0 14px;border-radius:10px;background:rgba(12,12,12,.6);backdrop-filter:blur(12px);color:#fff;font-size:13px}
+.hud-ctl button[aria-pressed="true"]{background:#FBFAF7;color:#121212}
+.map-fallback{position:absolute;inset:0;background-size:cover;background-position:center;display:none}
+.map-wrap.nomap .map-fallback{display:block}
+.map-credit{position:absolute;right:10px;bottom:8px;z-index:2;font-size:10px;color:rgba(255,255,255,.7)}
+.mk{width:14px;height:14px;border-radius:50%;background:#fff;border:3px solid #121212;box-shadow:0 0 0 1px rgba(255,255,255,.6);transition:transform .3s var(--ease),background .3s;cursor:pointer}
+.mk.on{transform:scale(1.5);background:var(--accent);border-color:#fff}
+.mk.past{background:#121212;border-color:#fff}
+.maplibregl-ctrl-attrib{display:none}
+.days{position:relative;list-style:none;margin:0;padding:0}
+.days:before{content:"";position:absolute;left:7px;top:10px;bottom:10px;width:1px;background:var(--line)}
+.days .fill{position:absolute;left:7px;top:10px;width:1px;background:var(--ink);height:0;transition:height .5s var(--ease)}
+.day{position:relative;padding:0 0 0 44px;min-height:58vh;display:flex;flex-direction:column;justify-content:center}
+.day:last-child{min-height:44vh}
+.day:before{content:"";position:absolute;left:0;top:calc(50% - 80px);width:15px;height:15px;border-radius:50%;background:var(--bg2);border:1px solid var(--ink3);transition:all .4s var(--ease)}
+.day.on:before{background:var(--ink);border-color:var(--ink);box-shadow:0 0 0 5px var(--line2)}
+.day .dt{display:flex;justify-content:space-between;color:var(--ink3)}
+.day h3{font-size:clamp(26px,2.6vw,36px);font-weight:400;letter-spacing:-.03em;line-height:1.05;margin:10px 0 12px;transition:color .3s}
+.day p{margin:0;color:var(--ink2);max-width:46ch}
+.day .stay{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;margin-top:20px;padding-top:16px;border-top:1px solid var(--line);font-size:14px}
+.day .stay span:nth-child(odd){color:var(--ink3);font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.05em;padding-top:3px}
+.day .thumb{width:100%;max-width:420px;aspect-ratio:16/10;border-radius:14px;overflow:hidden;margin-top:20px;display:none}
+.day .thumb img{width:100%;height:100%;object-fit:cover}
+.day:not(.on) h3,.day:not(.on) p{color:var(--ink3)}
+.dbd-end{display:flex;gap:10px;flex-wrap:wrap;padding-left:44px;margin-top:8px}
+
+/* =========================== HOW WE PLAN */
+.steps{display:grid;grid-template-columns:repeat(4,1fr);position:relative}
+.steps .track{position:absolute;left:0;right:0;top:0;height:1px;background:var(--line)}
+.steps .track i{display:block;height:1px;width:0;background:var(--ink);transition:width 1.6s var(--ease)}
+.steps.in .track i{width:100%}
+.step{padding:28px 28px 0 0}
+.step .mono{color:var(--ink3)}
+.step h4{font-size:24px;font-weight:400;letter-spacing:-.025em;margin:14px 0 10px}
+.step p{margin:0;color:var(--ink2);font-size:15px;max-width:30ch}
+
+/* =========================== PRICE */
+.price{display:grid;grid-template-columns:minmax(0,1fr) 420px;gap:clamp(24px,4vw,64px);align-items:start}
+.prow{display:grid;grid-template-columns:200px minmax(0,1fr);gap:24px;padding:26px 0;border-top:1px solid var(--line)}
+.prow:last-child{border-bottom:1px solid var(--line)}
+.prow .lbl b{display:block;font-weight:500}
+.prow .lbl small{color:var(--ink3);font-size:13px}
+.seg{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:6px}
+.seg button{border:1px solid var(--line);border-radius:12px;padding:12px 14px;text-align:left;transition:border-color .2s,background .2s}
+.seg button:hover{border-color:var(--ink3)}
+.seg button[aria-pressed="true"]{border-color:var(--ink);background:var(--surface)}
+.seg b{display:block;font-weight:500;font-size:15px}
+.seg small{color:var(--ink2);font-size:13px}
+.ctr{display:flex;gap:28px;flex-wrap:wrap}
+.ctr>div{display:flex;align-items:center;gap:14px}
+.stp{display:flex;align-items:center;border:1px solid var(--line);border-radius:999px}
+.stp button{width:40px;height:40px;display:grid;place-items:center;border-radius:50%}
+.stp button:disabled{opacity:.3;cursor:not-allowed}
+.stp output{min-width:28px;text-align:center;font-variant-numeric:tabular-nums}
+.chk{display:flex;align-items:center;gap:12px;padding:10px 0;cursor:pointer;border-bottom:1px solid var(--line2)}
+.chk:last-child{border-bottom:0}
+.chk input{appearance:none;-webkit-appearance:none;width:18px;height:18px;border:1px solid var(--ink3);border-radius:4px;margin:0;display:grid;place-items:center;flex:none;cursor:pointer}
+.chk input:checked{background:var(--ink);border-color:var(--ink)}
+.chk input:checked:after{content:"";width:5px;height:9px;border:solid var(--bg);border-width:0 1.5px 1.5px 0;transform:rotate(45deg) translate(-1px,-1px)}
+.chk .t{flex:1;font-size:15px}
+.chk .t small{display:block;color:var(--ink3);font-size:12.5px}
+.chk .v{font-variant-numeric:tabular-nums;color:var(--ink2);font-size:14px}
+.chks{display:grid;grid-template-columns:1fr 1fr;gap:0 32px}
+.chks h5{grid-column:1/-1;margin:14px 0 2px;font-weight:500;font-size:13px;color:var(--ink3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.05em}
+.chks h5:first-child{margin-top:0}
+.sum{position:sticky;top:96px;background:#121212;color:#EEEAE3;border-radius:22px;padding:28px;overflow:hidden}
+[data-theme="dark"] .sum{background:var(--surface);border:1px solid var(--line)}
+.sum .mono{color:rgba(238,234,227,.55)}
+.sum h3{font-size:26px;font-weight:400;letter-spacing:-.03em;margin:8px 0 22px}
+.sum .ln{display:flex;justify-content:space-between;gap:16px;font-size:14px;color:rgba(238,234,227,.7);padding:6px 0}
+.sum .ln span:last-child{color:#EEEAE3;font-variant-numeric:tabular-nums;white-space:nowrap}
+.sum .tot{border-top:1px solid rgba(238,234,227,.14);margin-top:14px;padding-top:18px}
+.sum .tot b{display:block;font-size:44px;font-weight:400;letter-spacing:-.04em;line-height:1;font-variant-numeric:tabular-nums;margin-top:6px}
+.sum .pp{font-size:14px;color:rgba(238,234,227,.6);margin-top:8px}
+.sum .btn{width:100%;justify-content:center;margin-top:22px;background:#EEEAE3;color:#121212}
+.sum .alt{display:block;text-align:center;margin-top:12px;font-size:14px;color:rgba(238,234,227,.7)}
+.sum .fine{font-size:12px;color:rgba(238,234,227,.45);margin:18px 0 0;line-height:1.5}
+.rates{margin-top:32px;font-size:14px;width:100%;border-collapse:collapse}
+.rates th{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink3);font-weight:400;text-align:left;padding:8px 0;border-bottom:1px solid var(--line)}
+.rates td{padding:12px 0;border-bottom:1px solid var(--line2)}
+.rates td+td,.rates th+th{text-align:right}
+
+/* =========================== DESTINATIONS (IntegratedBio list) */
+.dlist{border-top:1px solid var(--line)}
+.ditem{border-bottom:1px solid var(--line)}
+.ditem>button{display:grid;grid-template-columns:120px minmax(0,1fr) auto 40px;align-items:center;gap:20px;width:100%;text-align:left;padding:26px 0;transition:padding .4s var(--ease)}
+.ditem>button:hover{padding-left:12px}
+.ditem .n{color:var(--ink3);font-size:clamp(28px,3.4vw,52px);font-weight:300;letter-spacing:-.04em}
+.ditem .t{font-size:clamp(28px,3.4vw,52px);font-weight:400;letter-spacing:-.04em;line-height:1}
+.ditem .c{color:var(--ink2);font-size:14px}
+.ditem .pl{width:40px;height:40px;display:grid;place-items:center;transition:transform .4s var(--ease)}
+.ditem.open .pl{transform:rotate(45deg)}
+.dbody{display:grid;grid-template-rows:0fr;transition:grid-template-rows .5s var(--ease)}
+.ditem.open .dbody{grid-template-rows:1fr}
+.dbody>div{overflow:hidden}
+.dinner{display:grid;grid-template-columns:120px minmax(0,1fr) minmax(0,420px);gap:20px;padding:0 0 32px}
+.dinner ul{list-style:none;margin:0;padding:0;columns:2;column-gap:24px}
+.dinner li{padding:8px 0;border-bottom:1px solid var(--line2);break-inside:avoid;font-size:15px}
+.dinner .inc{margin-top:18px;font-size:14px;color:var(--ink2)}
+.dinner img{width:100%;aspect-ratio:16/10;object-fit:cover;border-radius:14px}
+.hover-img{position:fixed;z-index:40;width:300px;aspect-ratio:4/5;border-radius:14px;overflow:hidden;pointer-events:none;opacity:0;transform:translate(-50%,-50%) scale(.9) rotate(-3deg);transition:opacity .3s,transform .4s var(--ease);box-shadow:var(--shadow)}
+.hover-img.on{opacity:1;transform:translate(-50%,-50%) scale(1) rotate(-3deg)}
+.hover-img img{width:100%;height:100%;object-fit:cover}
+
+/* =========================== POSTCARD */
+.post{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);border:1px solid var(--line);border-radius:22px;overflow:hidden;background:var(--surface)}
+.post .pi{position:relative;min-height:440px}
+.post .pi img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.post .pb{padding:clamp(28px,4vw,56px);display:flex;flex-direction:column}
+.post .pb .row{display:flex;justify-content:space-between;color:var(--ink3)}
+.post h3{font-size:clamp(30px,3vw,44px);font-weight:400;letter-spacing:-.035em;line-height:1.02;margin:22px 0 14px}
+.post p{color:var(--ink2);margin:0;max-width:44ch}
+.word{margin-top:auto;padding-top:24px;border-top:1px solid var(--line);display:grid;grid-template-columns:auto 1fr;gap:4px 20px;align-items:baseline}
+.word .w{font-size:36px;font-weight:400;letter-spacing:-.03em;grid-row:span 2}
+.word .s{font-size:13px;color:var(--ink3);font-family:var(--mono)}
+.word .m{font-size:15px;color:var(--ink2)}
+.post .nav2{display:flex;gap:6px;margin-top:20px}
+.post .nav2 button{width:40px;height:40px;border:1px solid var(--line);border-radius:50%;display:grid;place-items:center}
+.post .nav2 button:hover{border-color:var(--ink)}
+
+/* =========================== GOOD TO KNOW */
+.gtk{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:clamp(24px,4vw,64px);align-items:start}
+.cancel{border:1px solid var(--line);border-radius:22px;padding:clamp(24px,3vw,36px);background:var(--surface)}
+.cancel h3{font-size:24px;font-weight:400;letter-spacing:-.025em;margin:8px 0 6px}
+.cbig{display:flex;align-items:baseline;gap:14px;margin:28px 0 6px}
+.cbig b{font-size:72px;font-weight:300;letter-spacing:-.05em;line-height:1;font-variant-numeric:tabular-nums;transition:color .3s}
+.cmsg{color:var(--ink2);min-height:48px;margin:0;font-size:15px}
+.cscale{position:relative;margin-top:28px}
+.cbars{display:grid;grid-template-columns:23fr 15fr 8fr 7fr;gap:3px}
+.cbars i{height:6px;background:var(--line);border-radius:3px;transition:background .3s}
+.cbars i.on{background:var(--ink)}
+.clab{display:grid;grid-template-columns:23fr 15fr 8fr 7fr;gap:3px;margin-top:8px;color:var(--ink3)}
+.range{width:100%;margin-top:16px;direction:rtl;accent-color:var(--ink)}
+.faq details{border-top:1px solid var(--line)}
+.faq details:last-child{border-bottom:1px solid var(--line)}
+.faq summary{list-style:none;display:flex;justify-content:space-between;align-items:center;gap:20px;padding:22px 0;cursor:pointer;font-size:18px;letter-spacing:-.01em}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary .ico{transition:transform .3s var(--ease)}
+.faq details[open] summary .ico{transform:rotate(45deg)}
+.faq .a{padding:0 0 22px;color:var(--ink2);font-size:15px;max-width:60ch}
+.faq .a ul{margin:0;padding-left:18px}
+.faq .a li+li{margin-top:4px}
+
+/* =========================== ENQUIRE (AERIVE) */
+.enq{position:relative;color:#fff;overflow:hidden;background:#111}
+.enq .bg{position:absolute;inset:0;background-size:cover;background-position:center}
+.enq:before{content:"";position:absolute;inset:0;z-index:1;background:linear-gradient(90deg,rgba(0,0,0,.72) 0%,rgba(0,0,0,.35) 60%,rgba(0,0,0,.2))}
+.enq .wrap{position:relative;z-index:2;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,480px);gap:48px;align-items:center;padding-top:clamp(80px,10vw,140px);padding-bottom:clamp(80px,10vw,140px)}
+.enq h2{font-size:clamp(42px,6vw,92px);font-weight:400;letter-spacing:-.045em;line-height:.95;margin:16px 0 20px}
+.enq p{color:rgba(255,255,255,.8);max-width:420px;margin:0}
+.enq .contacts{display:grid;gap:6px;margin-top:32px;font-size:15px}
+.enq .contacts a{display:flex;gap:12px;align-items:center;opacity:.9}
+.enq .contacts a:hover{opacity:1}
+.form{background:rgba(14,14,14,.45);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);border:1px solid rgba(255,255,255,.16);border-radius:22px;padding:24px}
+.form .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.fld{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
+.fld span{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:rgba(255,255,255,.6)}
+.fld input,.fld select,.fld textarea{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);border-radius:10px;padding:12px 14px;color:#fff;outline:none;transition:border-color .2s;width:100%}
+.fld input:focus,.fld select:focus,.fld textarea:focus{border-color:rgba(255,255,255,.5)}
+.fld select option{color:#121212}
+.fld textarea{resize:vertical;min-height:84px}
+.form .acts{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px}
+.form .acts .btn{justify-content:center}
+.form small{display:block;margin-top:12px;color:rgba(255,255,255,.55);font-size:12px}
+.err{color:#F3B2A3;font-size:13px;min-height:18px;margin:2px 0 0}
+
+/* =========================== FOOTER (Lightship) */
+footer{padding:80px 0 40px}
+.ft{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);gap:48px}
+.ft .stmt{font-size:22px;letter-spacing:-.02em;line-height:1.3;max-width:24ch}
+.ft .stmt span{color:var(--ink3)}
+.jrows a{display:grid;grid-template-columns:90px 1fr auto;gap:16px;padding:14px 0;border-bottom:1px solid var(--line);align-items:baseline;transition:padding .3s var(--ease)}
+.jrows a:first-child{border-top:1px solid var(--line)}
+.jrows a:hover{padding-left:8px}
+.jrows .mono{color:var(--ink3)}
+.jrows b{font-weight:400;font-size:18px;letter-spacing:-.01em}
+.jrows small{color:var(--ink3);font-size:13px}
+.fcols{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin-top:40px;font-size:14px}
+.fcols a,.fcols button{display:block;padding:4px 0;color:var(--ink2);text-align:left;font-size:14px}
+.fcols a:hover,.fcols button:hover{color:var(--ink)}
+.fbot{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;border-top:1px solid var(--line);margin-top:56px;padding-top:20px;font-size:12px;color:var(--ink3)}
+.credits{font-size:11px;color:var(--ink3);margin-top:14px;line-height:1.6}
+.credits a{text-decoration:underline}
+
+/* =========================== DRAWER (journey detail) */
+.scrim{position:fixed;inset:0;z-index:80;background:rgba(0,0,0,.45);opacity:0;pointer-events:none;transition:opacity .35s}
+.scrim.on{opacity:1;pointer-events:auto}
+.drawer{position:fixed;z-index:90;top:0;right:0;height:100%;width:min(620px,100%);background:var(--bg);transform:translateX(102%);transition:transform .55s var(--ease);display:flex;flex-direction:column}
+.drawer.on{transform:none}
+.dr-img{position:relative;height:300px;flex:none}
+.dr-img img{width:100%;height:100%;object-fit:cover}
+.dr-img:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.3),rgba(0,0,0,0) 40%,rgba(0,0,0,.6))}
+.dr-img .x{position:absolute;right:16px;top:16px;z-index:2;width:42px;height:42px;border-radius:50%;background:#FBFAF7;color:#121212;display:grid;place-items:center}
+.dr-img .tt{position:absolute;left:28px;bottom:22px;right:28px;z-index:2;color:#fff}
+.dr-img h3{font-size:38px;font-weight:400;letter-spacing:-.035em;line-height:1;margin:8px 0 0}
+.dr-body{flex:1;overflow:auto;padding:28px}
+.dr-body .stops{margin-bottom:24px}
+.dlist2{list-style:none;margin:0;padding:0}
+.dlist2 li{display:grid;grid-template-columns:72px 1fr;gap:16px;padding:16px 0;border-top:1px solid var(--line)}
+.dlist2 li .mono{color:var(--ink3);padding-top:3px}
+.dr-foot{flex:none;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 28px calc(16px + env(safe-area-inset-bottom));border-top:1px solid var(--line);background:var(--bg)}
+.dr-foot b{font-weight:500}
+.dr-foot small{display:block;color:var(--ink3);font-size:12px}
+
+/* =========================== LANGUAGE & CURRENCY */
+.loc-btn{display:flex;align-items:center;gap:7px;height:40px;padding:0 12px;border-radius:10px;font-size:13px;font-family:var(--mono);letter-spacing:.03em;transition:background .2s}
+.loc-btn:hover{background:var(--line2)}
+.nav.on-hero .loc-btn:hover{background:rgba(255,255,255,.12)}
+.loc{position:fixed;z-index:95;left:50%;top:50%;width:min(720px,calc(100% - 32px));max-height:min(88svh,760px);background:var(--bg);border-radius:22px;border:1px solid var(--line);box-shadow:var(--shadow);display:flex;flex-direction:column;transform:translate(-50%,-47%);opacity:0;pointer-events:none;transition:all .35s var(--ease)}
+.loc.on{transform:translate(-50%,-50%);opacity:1;pointer-events:auto}
+.loc-h{display:flex;justify-content:space-between;align-items:center;padding:20px 24px;border-bottom:1px solid var(--line)}
+.loc-h h3{margin:0;font-size:22px;font-weight:400;letter-spacing:-.02em}
+.loc-b{overflow:auto;padding:8px 24px 24px}
+.loc-b h4{margin:20px 0 10px;font-weight:400}
+.loc-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.loc-grid button{text-align:left;border:1px solid var(--line);border-radius:12px;padding:12px 14px;transition:border-color .2s,background .2s}
+.loc-grid button:hover{border-color:var(--ink3)}
+.loc-grid button[aria-checked="true"]{border-color:var(--ink);background:var(--surface)}
+.loc-grid b{display:block;font-weight:500;font-size:15px}
+.loc-grid small{display:block;color:var(--ink3);font-size:12px;margin-top:2px}
+.loc-det{font-size:13px;color:var(--accent);margin:14px 0 0}
+.loc-f{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:16px 24px;border-top:1px solid var(--line)}
+.loc-f p{margin:0;font-size:12.5px;color:var(--ink3);max-width:460px}
+.sum .usd{font-size:12.5px;color:rgba(238,234,227,.5);margin-top:6px}
+:lang(zh) body,:lang(zh) .h2,:lang(zh) h1{font-family:var(--sans),"PingFang SC","Microsoft YaHei","Noto Sans SC",sans-serif}
+:lang(hi) body{font-family:var(--sans),"Nirmala UI","Noto Sans Devanagari",sans-serif}
+:lang(zh) .hero h1,:lang(hi) .hero h1,:lang(ru) .hero h1{letter-spacing:-.02em}
+:lang(de) .hero h1,:lang(ru) .hero h1,:lang(fr) .hero h1,:lang(es) .hero h1,:lang(hi) .hero h1{font-size:clamp(44px,7.6vw,124px);max-width:14ch}
+@media (max-width:720px){.loc{top:auto;bottom:0;left:0;width:100%;transform:translateY(100%);border-radius:22px 22px 0 0;max-height:90svh}.loc.on{transform:none}.loc-grid{grid-template-columns:1fr 1fr}.loc-btn span{display:none}.loc-f{flex-direction:column;align-items:stretch}}
+@media (max-width:1100px) and (min-width:721px){.loc-btn span{display:none}}
+
+/* reveal */
+.rv{opacity:0;transform:translateY(28px);transition:opacity 1s var(--ease),transform 1s var(--ease)}
+.rv.in{opacity:1;transform:none}
+
+/* mobile bottom CTA */
+.mcta{display:none}
+
+/* =========================== TABLET */
+@media (max-width:1100px){
+  .links{display:none}
+  .menu-btn{display:grid}
+  .hero-row{grid-template-columns:1fr;gap:28px}
+  .sec-h{grid-template-columns:1fr auto;}
+  .sec-h .num{grid-column:1/-1;padding:0}
+  .feature{grid-template-columns:1fr}
+  .feature .fi{min-height:420px}
+  .jgrid{grid-template-columns:repeat(2,1fr)}
+  .story{grid-template-columns:1fr 1fr;gap:28px}
+  .steps{grid-template-columns:1fr 1fr;row-gap:32px}
+  .price{grid-template-columns:1fr}
+  .sum{position:relative;top:0}
+  .prow{grid-template-columns:1fr;gap:14px}
+  .gtk{grid-template-columns:1fr}
+  .enq .wrap{grid-template-columns:1fr}
+  .ft{grid-template-columns:1fr}
+  .dinner{grid-template-columns:1fr 1fr}
+  .dinner>.sp{display:none}
+  .ditem>button{grid-template-columns:72px minmax(0,1fr) 40px}
+  .ditem .c{display:none}
+}
+/* =========================== MOBILE */
+@media (max-width:720px){
+  body{padding-bottom:calc(72px + env(safe-area-inset-bottom))}
+  .nav{top:10px;height:54px;padding:0 6px 0 14px;width:calc(100% - 20px)}
+  .nav .brand img{height:26px}
+  .nav .btn{display:none}
+  .hero{min-height:600px}
+  .hero-in{padding-bottom:22px}
+  .hero h1{font-size:clamp(46px,14vw,64px)}
+  .hero p.lede{font-size:16px}
+  .hero .ctas{display:none}
+  .pf{grid-template-columns:1fr 1fr}
+  .pf label:nth-child(3){grid-column:1/-1}
+  .pf button{grid-column:1/-1;height:48px;justify-content:center}
+  .hero-meta{display:none}
+  .sec-h{grid-template-columns:1fr;gap:16px}
+  .filters{overflow-x:auto;scrollbar-width:none;width:max-content;max-width:100%}
+  .feature .fi{min-height:300px}
+  .kvs b{font-size:17px}
+  .jgrid{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;gap:14px;margin:0 calc(var(--pad)*-1);padding:0 var(--pad) 4px;scrollbar-width:none}
+  .jgrid::-webkit-scrollbar{display:none}
+  .jcard{flex:0 0 78%;scroll-snap-align:start}
+  .jcard .ji .go{opacity:1;transform:none;width:36px;height:36px}
+  .story{grid-template-columns:1fr;gap:0}
+  .map-wrap{top:72px;height:42svh;z-index:3;border-radius:16px;margin:0 calc(var(--pad)*-.5)}
+  .day{min-height:auto;padding:36px 0 36px 32px}
+  .day:first-child{padding-top:44px}
+  .day:before{top:44px}
+  .day:first-child:before{top:52px}
+  .day .thumb{display:block}
+  .day:not(.on) h3,.day:not(.on) p{color:inherit}
+  .day:not(.on) p{color:var(--ink2)}
+  .dbd-end{padding-left:32px}
+  .steps{grid-template-columns:1fr}
+  .seg{grid-auto-flow:row;grid-template-columns:1fr}
+  .chks{grid-template-columns:1fr}
+  .ditem>button{grid-template-columns:44px minmax(0,1fr) 32px;gap:12px;padding:20px 0}
+  .ditem .n,.ditem .t{font-size:26px}
+  .dinner{grid-template-columns:1fr;padding-bottom:24px}
+  .dinner ul{columns:1}
+  .hover-img{display:none}
+  .post{grid-template-columns:1fr}
+  .post .pi{min-height:260px}
+  .form .two,.form .acts{grid-template-columns:1fr}
+  .fcols{grid-template-columns:1fr 1fr}
+  .drawer{top:auto;bottom:0;height:92svh;width:100%;border-radius:22px 22px 0 0;overflow:hidden;transform:translateY(102%)}
+  .dr-img{height:220px}
+  .dr-img h3{font-size:30px}
+  .mcta{display:flex;position:fixed;left:10px;right:10px;bottom:calc(10px + env(safe-area-inset-bottom));z-index:55;gap:8px;padding:6px;border-radius:18px;background:var(--glass);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border:1px solid var(--line2);transition:transform .4s var(--ease)}
+  .mcta.hide{transform:translateY(140%)}
+  .mcta a{flex:1;justify-content:center;height:48px}
+}
+@media (prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important;scroll-behavior:auto!important}.rv{opacity:1;transform:none}}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+  <symbol id="arrow-ur" viewBox="0 0 24 24"><path d="M7 17L17 7M8 7h9v9"/></symbol>
+  <symbol id="left" viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></symbol>
+  <symbol id="right" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></symbol>
+  <symbol id="plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
+  <symbol id="x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+  <symbol id="menu" viewBox="0 0 24 24"><path d="M4 8h16M4 16h16"/></symbol>
+  <symbol id="sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+  <symbol id="moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 019.5 4a8 8 0 1010.5 10.5z"/></symbol>
+  <symbol id="wa" viewBox="0 0 24 24"><path d="M4 20l1.3-4A8 8 0 1112 20a8 8 0 01-3.9-1z"/><path d="M9 9.5c0 3 2.5 5.5 5.5 5.5l1-1.5-2-1-1 1c-1-.4-1.6-1-2-2l1-1-1-2z" stroke-width="1.2"/></symbol>
+  <symbol id="mail" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></symbol>
+  <symbol id="phone" viewBox="0 0 24 24"><path d="M5 3h4l2 5-2.5 1.5a11 11 0 005 5L15 12l5 2v4a2 2 0 01-2 2A16 16 0 013 5a2 2 0 012-2z"/></symbol>
+  <symbol id="globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.7 2.5 15.3 0 18M12 3c-2.5 2.7-2.5 15.3 0 18"/></symbol>
+  <symbol id="layers" viewBox="0 0 24 24"><path d="M12 3l9 5-9 5-9-5 9-5zM3 13l9 5 9-5"/></symbol>
+</svg>
+
+<!-- ============================ NAV ============================ -->
+<header class="nav on-hero" id="nav">
+  <a class="brand" href="#top" aria-label="DS Ceylon Adventures, home"><img class="l-light" src="img/logo_navy.webp" alt="DS Ceylon Adventures"><img class="l-dark" src="img/logo_white.webp" alt="DS Ceylon Adventures"></a>
+  <nav class="links" aria-label="Main">
+    <a href="#journeys" data-s="journeys" data-i18n="nav.journeys">Journeys</a>
+    <a href="#day-by-day" data-s="day-by-day" data-i18n="nav.day">Day by day</a>
+    <a href="#how" data-s="how" data-i18n="nav.how">How we plan</a>
+    <a href="#prices" data-s="prices" data-i18n="nav.prices">Prices</a>
+    <a href="#destinations" data-s="destinations" data-i18n="nav.dest">Destinations</a>
+    <a href="#know" data-s="know" data-i18n="nav.know">Good to know</a>
+  </nav>
+  <div class="nav-r">
+    <button class="icon-btn theme" id="themeBtn" aria-label="Switch between light and dark mode"><svg class="ico sun"><use href="#sun"/></svg><svg class="ico moon"><use href="#moon"/></svg></button>
+    <button class="loc-btn" id="locBtn" aria-label="Language and currency"><svg class="ico"><use href="#globe"/></svg><span id="locLbl">EN · USD</span></button>
+    <a class="btn btn-solid" href="#enquire" data-i18n="cta.plan">Plan my trip</a>
+    <button class="icon-btn menu-btn" id="menuBtn" aria-label="Open menu" aria-expanded="false"><svg class="ico"><use href="#menu"/></svg></button>
+  </div>
+</header>
+<div class="sheet-menu" id="sheetMenu" aria-hidden="true">
+  <a class="big" href="#journeys"><span>01</span><b data-i18n="nav.journeys">Journeys</b></a>
+  <a class="big" href="#day-by-day"><span>02</span><b data-i18n="nav.day">Day by day</b></a>
+  <a class="big" href="#how"><span>03</span><b data-i18n="nav.how">How we plan</b></a>
+  <a class="big" href="#prices"><span>04</span><b data-i18n="nav.prices">Prices</b></a>
+  <a class="big" href="#destinations"><span>05</span><b data-i18n="nav.dest">Destinations</b></a>
+  <a class="big" href="#know"><span>06</span><b data-i18n="nav.know">Good to know</b></a>
+  <div class="foot"><button class="btn btn-line" id="locBtn2" style="justify-content:center"><svg class="ico"><use href="#globe"/></svg><span id="locLbl2">English · USD</span></button><a class="btn btn-solid" href="#enquire" style="justify-content:center" data-i18n="cta.plan">Plan my trip</a><a class="btn btn-line" style="justify-content:center" href="tel:+94761993103"><svg class="ico"><use href="#phone"/></svg>+94 76 199 3103</a></div>
+</div>
+
+<main id="top">
+<!-- ============================ HERO ============================ -->
+<section class="hero" aria-label="Introduction">
+  <div class="hero-img" style="background-image:url(img/ninearch.jpg)"></div>
+  <div class="wrap hero-in">
+    <span class="mono" style="color:rgba(255,255,255,.75)" data-i18n="hero.eyebrow">Private round tours · Sri Lanka</span>
+    <h1 data-i18n="hero.h1">Sri Lanka, privately guided.</h1>
+    <div class="hero-row">
+      <div>
+        <p class="lede" data-i18n="hero.lede">Heritage cities, misty hill country, wildlife and quiet southern beaches, with your own chauffeur-guide from the moment you land.</p>
+        <div class="ctas"><a class="btn btn-light" href="#journeys"><span data-i18n="hero.cta1">Explore journeys</span> <svg class="ico"><use href="#arrow"/></svg></a><a class="btn btn-glass" href="#day-by-day" data-i18n="hero.cta2">See 14 days on the map</a></div>
+      </div>
+      <form class="planner" id="planner" aria-label="Find a journey">
+        <div class="ph mono"><span data-i18n="pl.title">Find your journey</span><span data-i18n="pl.q">3 questions</span></div>
+        <div class="pf">
+          <label><span data-i18n="pl.len">Length</span><select id="fLen"><option value="0">Any</option><option value="7">7 days</option><option value="10">10 days</option><option value="14" selected>14 days</option><option value="21">21 days</option></select></label>
+          <label><span data-i18n="pl.int">Most interested in</span><select id="fInt"><option value="">Everything</option><option value="culture">Ancient cities</option><option value="hills">Tea &amp; hill country</option><option value="wildlife">Wildlife</option><option value="beach">Beaches</option><option value="north">North &amp; east</option></select></label>
+          <label><span data-i18n="pl.who">Travellers</span><select id="fWho"><option value="2">2 adults</option><option value="3">3 adults</option><option value="4">4 adults</option><option value="5">5 adults</option><option value="6">6 adults</option></select></label>
+          <button type="submit"><span data-i18n="pl.show">Show</span> <svg class="ico"><use href="#arrow"/></svg></button>
+        </div>
+      </form>
+    </div>
+    <div class="hero-meta mono">
+      <div class="facts"><span data-i18n="fact1">Chauffeur-guide from arrival</span><span data-i18n="fact2">Free cancellation 30+ days out</span><span data-i18n="fact3">Quoted in US dollars</span></div>
+      <span class="scroll-cue"><span data-i18n="hero.caption">Nine Arch Bridge, Ella · Day 08</span><i></i></span>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ 01 JOURNEYS ============================ -->
+<section class="sec" id="journeys">
+  <div class="wrap">
+    <div class="sec-h rv">
+      <span class="num mono" data-i18n="s1.num">01 — Journeys</span>
+      <div><h2 class="h2" data-i18n="s1.h">Five ways to see the island.</h2><p data-i18n="s1.p">Every route is private and can be reshaped around your dates, pace and hotels.</p></div>
+      <div class="filters" role="group" aria-label="Filter by length" id="lenFilter">
+        <button aria-pressed="true" data-f="0">All</button><button aria-pressed="false" data-f="7">7 days</button><button aria-pressed="false" data-f="10">10 days</button><button aria-pressed="false" data-f="14">14 days</button><button aria-pressed="false" data-f="21">21 days</button>
+      </div>
+    </div>
+    <div class="match-note" id="matchNote" role="status"></div>
+
+    <article class="feature rv jitem" data-id="t14" data-len="14">
+      <div class="fi"><img src="img/ninearch.jpg" alt="Train crossing the Nine Arch Bridge in Ella"><span class="tag mono" data-i18n="ft.tag">Signature journey</span></div>
+      <div class="fb">
+        <span class="mono muted" id="ftLen">14 days · 13 nights</span>
+        <h3>The Grand Round</h3>
+        <p data-i18n="ft.p">Ancient landmarks, scenic hill-country trains, a Yala safari and a slow finish on the golden southern coast. The complete Sri Lankan experience.</p>
+        <ul class="stops"><li>Negombo</li><li>Dambulla</li><li>Sigiriya</li><li>Polonnaruwa</li><li>Kandy</li><li>Nuwara Eliya</li><li>Ella</li><li>Yala</li><li>Mirissa</li><li>Galle</li><li>Colombo</li></ul>
+        <div class="kvs"><div><span class="mono muted" data-i18n="from">From</span><b data-usd="1450">US$1,450</b></div><div><span class="mono muted" data-i18n="per">Per</span><b data-i18n="person">Person</b></div><div><span class="mono muted" data-i18n="hotels">Hotels</span><b>3–5 <span data-i18n="star">star</span></b></div></div>
+        <div class="ctas"><a class="btn btn-solid" href="#day-by-day"><span data-i18n="ft.cta1">Follow it day by day</span> <svg class="ico"><use href="#arrow"/></svg></a><a class="btn btn-line" href="#prices" data-i18n="ft.cta2">Estimate my price</a></div>
+      </div>
+    </article>
+
+    <div class="jgrid" id="jgrid"></div>
+  </div>
+</section>
+
+<!-- ============================ 02 DAY BY DAY ============================ -->
+<section class="sec dbd" id="day-by-day">
+  <div class="wrap">
+    <div class="sec-h rv">
+      <span class="num mono" data-i18n="s2.num">02 — Day by day</span>
+      <div><h2 class="h2" data-i18n="s2.h">The Grand Round, stop by stop.</h2><p data-i18n="s2.p">Scroll the itinerary and the map follows you across the island.</p></div>
+    </div>
+    <div class="story">
+      <div class="map-wrap" id="mapWrap">
+        <div id="map" aria-label="3D map of the route"></div>
+        <div class="map-fallback" id="mapFallback"></div>
+        <div class="map-hud">
+          <div class="hud-day"><span class="mono" id="hudN" style="opacity:.7">Day 01 of 14</span><b id="hudP">Negombo</b></div>
+          <div class="hud-ctl"><button id="b3d" aria-pressed="true">3D</button><button id="bAll" aria-pressed="false" data-i18n="map.all">Whole route</button></div>
+        </div>
+        <span class="map-credit">Imagery © Esri, Maxar · Elevation © Mapzen/AWS</span>
+      </div>
+      <div>
+        <ol class="days" id="days"><span class="fill" id="dayFill"></span></ol>
+        <div class="dbd-end"><a class="btn btn-solid" href="#prices"><span data-i18n="dbd.c1">Estimate this journey</span> <svg class="ico"><use href="#arrow"/></svg></a><a class="btn btn-line" href="#enquire" data-i18n="dbd.c2">Ask us to adapt it</a></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ 03 HOW WE PLAN ============================ -->
+<section class="sec" id="how">
+  <div class="wrap">
+    <div class="sec-h rv">
+      <span class="num mono" data-i18n="s3.num">03 — How we plan</span>
+      <div><h2 class="h2" data-i18n="s3.h">From first message to the airport.</h2></div>
+      <a class="link" href="#enquire"><span data-i18n="s3.link">Start step one</span> <svg class="ico"><use href="#arrow"/></svg></a>
+    </div>
+    <div class="steps" id="steps">
+      <div class="track"><i></i></div>
+      <div class="step rv"><span class="mono"><span data-i18n="step">Step</span> 01</span><h4 data-i18n="st1.h">Tell us your dates</h4><p data-i18n="st1.p">Send your dates, group and interests on WhatsApp or by email.</p></div>
+      <div class="step rv"><span class="mono"><span data-i18n="step">Step</span> 02</span><h4 data-i18n="st2.h">Shape the route</h4><p data-i18n="st2.p">We adapt a journey to your pace, with hotels at the level you choose.</p></div>
+      <div class="step rv"><span class="mono"><span data-i18n="step">Step</span> 03</span><h4 data-i18n="st3.h">Confirm the rates</h4><p data-i18n="st3.p">Final rates are confirmed against hotel availability when you request to book.</p></div>
+      <div class="step rv"><span class="mono"><span data-i18n="step">Step</span> 04</span><h4 data-i18n="st4.h">Land and go</h4><p data-i18n="st4.p">Your chauffeur-guide meets you at Bandaranaike International Airport.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ 04 PRICES ============================ -->
+<section class="sec" id="prices" style="padding-top:0">
+  <div class="wrap">
+    <div class="sec-h rv">
+      <span class="num mono" data-i18n="s4.num">04 — Prices</span>
+      <div><h2 class="h2" data-i18n="s4.h">Estimate the Grand Round.</h2><p data-i18n="s4.p">Preliminary rates per person. Change anything and the total updates.</p></div>
+    </div>
+    <div class="price">
+      <div class="rv">
+        <div class="prow"><div class="lbl"><b data-i18n="pr.hotel">Hotel category</b><small data-i18n="pr.hotelS">Twin sharing, B&amp;B included</small></div><div class="seg" id="pTier"></div></div>
+        <div class="prow"><div class="lbl"><b data-i18n="pr.trav">Travellers</b><small data-i18n="pr.travS">Minimum two adults</small></div>
+          <div class="ctr"><div><span data-i18n="pr.adults">Adults</span><div class="stp"><button data-s="a" data-d="-1" aria-label="Fewer adults"><svg class="ico"><use href="#minus"/></svg></button><output id="oA">2</output><button data-s="a" data-d="1" aria-label="More adults"><svg class="ico"><use href="#plus"/></svg></button></div></div>
+          <div><span data-i18n="pr.singles">Single rooms</span><div class="stp"><button data-s="s" data-d="-1" aria-label="Fewer single rooms"><svg class="ico"><use href="#minus"/></svg></button><output id="oS">0</output><button data-s="s" data-d="1" aria-label="More single rooms"><svg class="ico"><use href="#plus"/></svg></button></div></div></div></div>
+        <div class="prow"><div class="lbl"><b data-i18n="pr.meal">Meal plan</b><small data-i18n="pr.mealS">Per person, per night</small></div><div class="seg" id="pMeal"></div></div>
+        <div class="prow"><div class="lbl"><b data-i18n="pr.tix">Tickets &amp; extras</b><small data-i18n="pr.tixS">Per person</small></div><div class="chks" id="pActs"></div></div>
+        <table class="rates" aria-label="Extra hotel nights">
+          <thead><tr><th data-i18n="rt.h">Extra nights · per double room</th><th data-i18n="rt.low">Low season</th><th data-i18n="rt.high">High season</th></tr></thead>
+          <tbody><tr><td>3-Star Standard</td><td data-usd="55">US$55</td><td data-usd="75">US$75</td></tr><tr><td>4-Star Superior</td><td data-usd="85">US$85</td><td data-usd="125">US$125</td></tr><tr><td>5-Star Deluxe</td><td data-usd="150">US$150</td><td data-usd="220">US$220</td></tr></tbody>
+        </table>
+      </div>
+      <aside class="sum rv" aria-live="polite">
+        <span class="mono" data-i18n="sum.k">Your estimate</span>
+        <h3 data-i18n="sum.h">The Grand Round · 14 days</h3>
+        <div id="sumLines"></div>
+        <div class="tot"><span class="mono" data-i18n="sum.tot">Estimated total</span><b id="sumTot">US$2,900</b><div class="pp" id="sumPP">US$1,450 per person</div><div class="pp usd" id="sumUSD"></div></div>
+        <a class="btn" id="sumWA" href="#"><svg class="ico"><use href="#wa"/></svg><span data-i18n="sum.cta">Request this quote</span></a>
+        <a class="alt" id="sumMail" href="#" data-i18n="sum.alt">or send it by email</a>
+        <p class="fine" data-i18n="sum.fine">Estimate only. Rates depend on hotel availability at confirmation, and high and festive season supplements may apply. Final rates are confirmed when we receive your booking request.</p>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ 05 DESTINATIONS ============================ -->
+<section class="sec" id="destinations" style="padding-top:0">
+  <div class="wrap">
+    <div class="sec-h rv">
+      <span class="num mono" data-i18n="s5.num">05 — Destinations</span>
+      <div><h2 class="h2" data-i18n="s5.h">Six regions, one small island.</h2><p data-i18n="s5.p">Mix any of these into a tailor-made route.</p></div>
+    </div>
+    <div class="dlist rv" id="dlist"></div>
+  </div>
+  <div class="hover-img" id="hoverImg"><img alt=""></div>
+</section>
+
+<!-- ============================ POSTCARD ============================ -->
+<section class="sec" id="postcard" style="padding-top:0" aria-label="Today's postcard">
+  <div class="wrap">
+    <article class="post rv">
+      <div class="pi"><img id="pcImg" alt=""></div>
+      <div class="pb">
+        <div class="row mono"><span data-i18n="pc.k">Today's postcard</span><span id="pcDate"></span></div>
+        <span class="mono" style="margin-top:28px;color:var(--accent)" id="pcPlace"></span>
+        <h3 id="pcTitle"></h3>
+        <p id="pcFact"></p>
+        <div class="word"><span class="w" id="pcWord"></span><span class="s" id="pcSay"></span><span class="m" id="pcMean"></span></div>
+        <div class="nav2"><button id="pcPrev" aria-label="Previous postcard"><svg class="ico"><use href="#left"/></svg></button><button id="pcNext" aria-label="Next postcard"><svg class="ico"><use href="#right"/></svg></button></div>
+      </div>
+    </article>
+  </div>
+</section>
+
+<!-- ============================ 06 GOOD TO KNOW ============================ -->
+<section class="sec" id="know" style="padding-top:0">
+  <div class="wrap">
+    <div class="sec-h rv">
+      <span class="num mono" data-i18n="s6.num">06 — Good to know</span>
+      <div><h2 class="h2" data-i18n="s6.h">Clear terms, before you ask.</h2></div>
+    </div>
+    <div class="gtk">
+      <div class="cancel rv">
+        <span class="mono muted" data-i18n="c.k">Cancellation policy</span>
+        <h3 data-i18n="c.h">What if plans change?</h3>
+        <p class="muted" style="margin:0;font-size:15px" data-i18n="c.p">Drag to see the charge at any point before arrival.</p>
+        <div class="cbig"><b id="cPct">0%</b><span class="muted" id="cWhen"></span></div>
+        <p class="cmsg" id="cMsg"></p>
+        <div class="cscale"><div class="cbars" id="cBars"><i></i><i></i><i></i><i></i></div><div class="clab mono"><span>30+ days</span><span>15–29</span><span>7–14</span><span>&lt;7</span></div>
+        <input type="range" class="range" id="cRange" min="0" max="45" value="45" aria-label="Days before arrival"></div>
+        <p class="muted" style="font-size:13px;margin:22px 0 0">No-show without notice: 100% of the booking value. Requests must be in writing. Non-refundable hotel deposits, train and airline tickets may be charged separately.</p>
+      </div>
+      <div class="faq rv">
+        <details open><summary>How do your prices work?<svg class="ico"><use href="#plus"/></svg></summary><div class="a"><ul><li>Rates are in US dollars, per person, twin sharing, for a minimum of two adults.</li><li>Bed &amp; breakfast is included; half board, full board and all-inclusive are optional supplements.</li><li>Entrance fees and activities are quoted separately and are indicative.</li><li>Rates are subject to hotel availability, taxes and supplier rates, and are confirmed when you book.</li></ul></div></details>
+        <details><summary>What should I wear to temples?<svg class="ico"><use href="#plus"/></svg></summary><div class="a">Clothing that covers shoulders and knees. Footwear is removed at sacred sites, so slip-on shoes help.</div></details>
+        <details><summary>Are trains and safaris guaranteed?<svg class="ico"><use href="#plus"/></svg></summary><div class="a">Train tickets depend on availability. Park access, safari sightings, whale watching and excursions depend on availability, season and local conditions.</div></details>
+        <details><summary>Can the route change?<svg class="ico"><use href="#plus"/></svg></summary><div class="a">Yes. Duration, overnight stays and routing can vary with flight times, travel dates, season and your interests. Travel times are estimates.</div></details>
+        <details><summary>Can I change a confirmed booking?<svg class="ico"><use href="#plus"/></svg></summary><div class="a">Changes depend on availability and may incur extra charges. Refunds, where they apply, are made after cancellation charges and bank fees.</div></details>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ ENQUIRE ============================ -->
+<section class="enq" id="enquire">
+  <div class="bg" style="background-image:url(img/sigiriya.jpg)"></div>
+  <div class="wrap">
+    <div class="rv">
+      <span class="mono" style="color:rgba(255,255,255,.7)" data-i18n="enq.k">Plan my trip</span>
+      <h2 data-i18n="enq.h">Tell us when. We'll shape the rest.</h2>
+      <p data-i18n="enq.p">A real person replies, usually on WhatsApp. Nothing is booked until you confirm.</p>
+      <div class="contacts">
+        <a href="tel:+94761993103"><svg class="ico"><use href="#phone"/></svg>+94 76 199 3103</a>
+        <a href="mailto:enquiries@dsceylonadventures.com"><svg class="ico"><use href="#mail"/></svg>enquiries@dsceylonadventures.com</a>
+      </div>
+    </div>
+    <form class="form rv" id="enqForm" novalidate>
+      <div class="two">
+        <label class="fld"><span data-i18n="f.name">Your name</span><input id="eName" autocomplete="name" required></label>
+        <label class="fld"><span data-i18n="f.month">Travel month</span><input id="eMonth" type="month"></label>
+      </div>
+      <div class="two">
+        <label class="fld"><span data-i18n="f.journey">Journey</span><select id="eTrip"></select></label>
+        <label class="fld"><span data-i18n="f.who">Travellers</span><select id="eWho"><option>2 adults</option><option>3 adults</option><option>4 adults</option><option>5 adults</option><option>6+ adults</option><option>Family with children</option></select></label>
+      </div>
+      <label class="fld"><span data-i18n="f.notes">Anything we should know</span><textarea id="eMsg" data-i18n-ph="f.ph" placeholder="Pace, hotels, celebrations, must-sees…"></textarea></label>
+      <p class="err" id="eErr" role="alert"></p>
+      <div class="acts"><button class="btn btn-light" type="submit" data-via="wa"><svg class="ico"><use href="#wa"/></svg><span data-i18n="f.wa">Send on WhatsApp</span></button><button class="btn btn-glass" type="submit" data-via="mail"><svg class="ico"><use href="#mail"/></svg><span data-i18n="f.mail">Send by email</span></button></div>
+      <small data-i18n="f.small">Opens WhatsApp or your email app with your message filled in. Nothing is sent from this page.</small>
+    </form>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="ft">
+      <div>
+        <img src="img/logo_navy.webp" alt="DS Ceylon Adventures" style="height:40px;margin-bottom:28px" class="f-logo-l"><img src="img/logo_white.webp" alt="" style="height:40px;margin-bottom:28px;display:none" class="f-logo-d">
+        <p class="stmt"><span data-i18n="foot.s1" style="color:inherit">Discover Sri Lanka with us.</span> <span data-i18n="foot.s2">Private round tours with a chauffeur-guide, shaped around your travel wishes.</span></p>
+      </div>
+      <div>
+        <div class="jrows" id="jrows"></div>
+        <div class="fcols">
+          <div><span class="mono muted" data-i18n="foot.explore">Explore</span><a href="#journeys" data-i18n="nav.journeys">Journeys</a><a href="#day-by-day" data-i18n="nav.day">Day by day</a><a href="#destinations" data-i18n="nav.dest">Destinations</a></div>
+          <div><span class="mono muted" data-i18n="foot.plan">Plan</span><a href="#prices" data-i18n="nav.prices">Prices</a><a href="#know" data-i18n="foot.cancel">Cancellation</a><a href="#enquire" data-i18n="cta.plan">Plan my trip</a></div>
+          <div><span class="mono muted" data-i18n="foot.contact">Contact</span><a href="tel:+94761993103">+94 76 199 3103</a><a href="mailto:enquiries@dsceylonadventures.com" data-i18n="foot.email">Email us</a><a href="https://www.dsceylonadventures.com">dsceylonadventures.com</a></div>
+        </div>
+      </div>
+    </div>
+    <div class="fbot"><span>© 2026 DS Ceylon Adventures · <button class="mono" id="locBtn3" style="color:inherit"><span id="locLbl3">English · USD</span></button></span><button id="themeBtn2" class="mono" style="color:inherit"><span data-i18n="foot.appear">Appearance</span>: <span id="themeLbl">System</span></button></div>
+    <p class="credits" id="credits"></p>
+  </div>
+</footer>
+
+<div class="mcta" id="mcta"><a class="btn btn-solid" href="#enquire">Plan my trip</a><a class="btn btn-line" href="#prices">Prices</a></div>
+
+<div class="scrim" id="scrim"></div>
+<aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-labelledby="drT">
+  <div class="dr-img"><img id="drImg" alt=""><button class="x" id="drX" aria-label="Close"><svg class="ico"><use href="#x"/></svg></button><div class="tt"><span class="mono" id="drSub" style="opacity:.8"></span><h3 id="drT"></h3></div></div>
+  <div class="dr-body" id="drBody"></div>
+  <div class="dr-foot" id="drFoot"></div>
+</aside>
+
+<div class="loc" id="locModal" role="dialog" aria-modal="true" aria-labelledby="locT">
+  <div class="loc-h"><h3 id="locT" data-i18n="loc.title">Language and currency</h3><button class="icon-btn" id="locX" aria-label="Close"><svg class="ico"><use href="#x"/></svg></button></div>
+  <div class="loc-b">
+    <p class="loc-det" id="locDet"></p>
+    <h4 class="mono muted" data-i18n="loc.lang">Language</h4><div class="loc-grid" id="locLangs" role="radiogroup"></div>
+    <h4 class="mono muted" data-i18n="loc.cur">Currency</h4><div class="loc-grid" id="locCurs" role="radiogroup"></div>
+  </div>
+  <div class="loc-f"><p><span data-i18n="loc.note">Itinerary details are shown in English for now.</span> <span id="locSrc"></span>.</p><button class="btn btn-solid" id="locDone" data-i18n="loc.done">Done</button></div>
+</div>
+
+<script src="vendor/maplibre-gl.js"></script>
+<script src="i18n.js"></script>
+<script>
+"use strict";
+const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
+const WA="94761993103",MAIL="enquiries@dsceylonadventures.com";
+const fmt=n=>"US$"+Math.round(n).toLocaleString("en-US");
+const rng=(a,b)=>a===b?fmt(a):`${fmt(a)}–${Math.round(b).toLocaleString("en-US")}`;
+const waLink=t=>"https://wa.me/"+WA+"?text="+encodeURIComponent(t);
+const mailLink=(s,b)=>`mailto:${MAIL}?subject=${encodeURIComponent(s)}&body=${encodeURIComponent(b)}`;
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/* ---------- DATA (client PDF + original site) ---------- */
+const TOURS=[
+ {id:"t14",len:14,title:"The Grand Round",img:"ninearch",from:1450,tags:["culture","hills","wildlife","beach"],route:["Negombo","Dambulla","Sigiriya","Polonnaruwa","Kandy","Nuwara Eliya","Ella","Yala","Mirissa","Galle","Colombo"]},
+ {id:"t7",len:7,title:"Sri Lanka Highlights",img:"sigiriya2",tags:["culture","hills","beach"],route:["Negombo","Sigiriya","Kandy","Nuwara Eliya","Ella","South coast","Galle"],
+  days:[["1","Arrival and transfer to the Sigiriya area."],["2","Sigiriya Rock Fortress or Pidurangala; Dambulla Cave Temple."],["3","Kandy, Temple of the Sacred Tooth Relic and a cultural performance."],["4","Tea estate, factory, waterfalls and the scenic drive to Ella."],["5","Nine Arch Bridge, Little Adam’s Peak and Ravana Falls."],["6","South coast transfer; optional Udawalawe or Yala safari, beach time."],["7","Galle Fort and airport transfer."]]},
+ {id:"t10",len:10,title:"Classic Round Tour",img:"tea",tags:["culture","hills","wildlife","beach"],route:["Negombo","Sigiriya","Kandy","Nuwara Eliya","Ella","Yala","Mirissa","Galle"],
+  days:[["1","Arrival, Negombo beach and welcome dinner."],["2","Sigiriya; Polonnaruwa or optional Minneriya / Kaudulla safari."],["3","Dambulla Cave Temple, Kandy Tooth Temple and cultural show."],["4","Peradeniya Gardens, tea factory and Nuwara Eliya."],["5","Optional Horton Plains / World’s End; scenic rail to Ella if available."],["6","Ella viewpoints, Nine Arch Bridge and Ravana Falls."],["7","Yala National Park jeep safari."],["8","South coast relaxation and Galle Fort."],["9","Beach leisure / optional Bentota stop."],["10","Airport transfer."]]},
+ {id:"t14b",len:14,title:"Grand Island Tour",img:"stilt",tags:["culture","hills","wildlife","beach"],route:["Anuradhapura","Sigiriya","Kandy","Nuwara Eliya","Ella","Yala","Tangalle","Mirissa","Galle","Bentota"],
+  days:[["1–2","Negombo arrival and Anuradhapura sacred city highlights."],["3–4","Mihintale, Sigiriya, Pidurangala and Polonnaruwa."],["5","Dambulla, Kandy Tooth Temple and cultural performance."],["6","Peradeniya Gardens and Kandy viewpoints."],["7","Tea estates, factory and Nuwara Eliya."],["8","Horton Plains / World’s End (weather permitting), Ella."],["9","Ella attractions and waterfalls."],["10–14","Yala safari, Tangalle and Mirissa beaches, Galle Fort, Bentota and airport transfer."]]},
+ {id:"t21",len:21,title:"Complete Discovery",img:"ella",tags:["culture","hills","wildlife","beach","north"],route:["Anuradhapura","Jaffna","Trincomalee","Sigiriya","Kandy","Nuwara Eliya","Ella","Safari","South coast","Galle","Bentota"],
+  days:[["1–2","Negombo and Anuradhapura ancient city."],["3–5","Jaffna Fort, Nallur Kandaswamy Temple, markets and island scenery."],["6–7","Trincomalee, Koneswaram Temple, Fort Frederick and Nilaveli; optional Pigeon Island."],["8–10","Sigiriya, Dambulla, Polonnaruwa and optional elephant safari."],["11–12","Kandy, Tooth Relic Temple, gardens and cultural performance."],["13–14","Nuwara Eliya tea country and Horton Plains."],["15–16","Ella scenic rail experience and attractions."],["17","Wildlife safari in a suitable national park."],["18–19","Tangalle / Mirissa beach stay; seasonal whale watching optional."],["20","Galle Fort and Bentota."],["21","Airport transfer."]]}
+];
+const DAYS=[
+ {t:"Arrival in Sri Lanka",p:"Negombo",ll:[79.84,7.21],img:"negombo",z:11.5,b:-10,stay:"Negombo",hotel:"Jetwing Blue / Goldi Sands Hotel",x:"Your chauffeur-guide welcomes you at Bandaranaike International Airport for the short drive to Negombo, a coastal town known for golden beaches and its fishing culture. The rest of the day is yours."},
+ {t:"Dambulla Cave Temple",p:"Dambulla",ll:[80.649,7.857],img:"dambulla",z:13,b:20,stay:"Sigiriya / Dambulla",hotel:"Hotel Sigiriya / Sigiriya Village",x:"Into the Cultural Triangle. Visit the Dambulla Cave Temple, a UNESCO World Heritage Site of ancient Buddhist murals, statues and cave sanctuaries, then continue to Sigiriya."},
+ {t:"Sigiriya Rock Fortress",p:"Sigiriya",ll:[80.7597,7.957],img:"sigiriya",z:14.2,b:-35,stay:"Sigiriya",hotel:"Hotel Sigiriya / Sigiriya Village",x:"Climb to royal gardens, frescoes and water gardens with panoramic summit views. In the afternoon, village life: a bullock-cart ride, a traditional catamaran and an authentic local lunch."},
+ {t:"Polonnaruwa, then Kandy",p:"Polonnaruwa",ll:[81.0,7.94],img:"polon",z:13,b:10,stay:"Kandy",hotel:"The Golden Crown Hotel / Cinnamon Citadel Kandy",x:"The medieval capital, a UNESCO World Heritage Site: Royal Palace ruins, the Gal Vihara Buddha statues, ancient stupas and irrigation. Then a scenic drive to Kandy."},
+ {t:"Kandy and the Temple of the Tooth",p:"Kandy",ll:[80.6413,7.2936],img:"kandy",z:14,b:-20,stay:"Kandy",hotel:"The Golden Crown Hotel / Cinnamon Citadel Kandy",x:"The Temple of the Sacred Tooth Relic, a walk around Kandy Lake, a gem museum and handicraft shops. In the evening, a Kandyan cultural dance performance."},
+ {t:"Scenic train to Nuwara Eliya",p:"Nuwara Eliya",ll:[80.7829,6.9497],img:"train",z:12.6,b:40,stay:"Nuwara Eliya",hotel:"Araliya Green City / The Grand Hotel",x:"A train through tea plantations, misty mountains and waterfalls to Nanu Oya, then on to Nuwara Eliya, “Little England”, for Gregory Lake and colonial architecture."},
+ {t:"Tea country and Ravana Falls",p:"Ella",ll:[81.0466,6.8667],img:"tea",z:12.8,b:60,stay:"Ella",hotel:"EKHO Ella / Ella Flower Garden Resort",x:"See how Ceylon tea is made at a plantation and factory, then wind along mountain roads to Ella, stopping at Ravana Falls."},
+ {t:"Nine Arch Bridge and Little Adam’s Peak",p:"Nine Arch Bridge",ll:[81.0608,6.8768],img:"ninearch",z:14.6,b:-60,stay:"Ella",hotel:"EKHO Ella / Ella Flower Garden Resort",x:"The colonial-era Nine Arch Bridge, wrapped in jungle and tea, then a hike up Little Adam’s Peak for views of the Ella Gap. The afternoon is free."},
+ {t:"Yala jeep safari",p:"Yala",ll:[81.42,6.37],img:"yala",z:11.5,b:0,stay:"Yala / Tissamaharama",hotel:"Cinnamon Wild Yala / Jetwing Yala",x:"An afternoon jeep safari through Yala National Park. Look for elephants, crocodiles, deer, birdlife and the elusive Sri Lankan leopard."},
+ {t:"To the southern coast",p:"Mirissa",ll:[80.4718,5.9483],img:"mirissa",z:13,b:-20,stay:"Mirissa",hotel:"Paradise Beach Club / Mandara Resort Mirissa",x:"A scenic drive through coastal towns to Mirissa. The afternoon is for the beach, or a swim when conditions permit."},
+ {t:"Coconut Tree Hill and the beach",p:"Mirissa",ll:[80.4622,5.9436],img:"coconut",z:14.5,b:30,stay:"Mirissa",hotel:"Paradise Beach Club / Mandara Resort Mirissa",x:"Coconut Tree Hill for ocean views. Optional whale watching in season, snorkelling or surfing, or a slow day by the sea."},
+ {t:"Galle Fort",p:"Galle",ll:[80.2170,6.0270],img:"galle",z:14.8,b:-30,stay:"Galle",hotel:"Jetwing Lighthouse / The Heritage Hotel Galle Fort",x:"UNESCO-listed Galle Fort: the lighthouse, cobbled streets and boutiques, with an optional stop at Unawatuna Beach."},
+ {t:"Colombo city tour",p:"Colombo",ll:[79.8475,6.9271],img:"colombo",z:13,b:10,stay:"Colombo",hotel:"Cinnamon Grand Colombo / Marino Beach Colombo",x:"Gangaramaya Temple, Independence Square, Galle Face Green and the National Museum (subject to opening). The evening is free."},
+ {t:"Departure",p:"Airport",ll:[79.8841,7.1808],img:"negombo",z:11,b:0,stay:"",hotel:"Transfer to Bandaranaike International Airport",x:"Time for a final shopping stop or short excursion, depending on your flight, before your chauffeur-guide drives you to the airport."}
+];
+const REGIONS=[
+ {t:"Cultural Triangle",img:"sigiriya2",places:["Sigiriya Rock Fortress","Dambulla Cave Temple","Polonnaruwa","Anuradhapura","Mihintale"],inc:["t14","t7","t10","t14b","t21"]},
+ {t:"Kandy & Central Highlands",img:"mist",places:["Temple of the Sacred Tooth Relic","Peradeniya Botanical Gardens","Nuwara Eliya","Tea estates","Horton Plains"],inc:["t14","t7","t10","t14b","t21"]},
+ {t:"Ella & Scenic Country",img:"ninearch",places:["Nine Arch Bridge","Little Adam’s Peak","Ella Rock","Ravana Falls","Scenic railway"],inc:["t14","t7","t10","t14b","t21"]},
+ {t:"Wildlife",img:"yala",places:["Yala","Udawalawe","Minneriya","Kaudulla National Parks"],inc:["t14","t10","t14b","t21"]},
+ {t:"South & West Coast",img:"galle",places:["Mirissa","Tangalle","Galle Fort","Unawatuna","Bentota","Negombo"],inc:["t14","t7","t10","t14b","t21"]},
+ {t:"East & North",img:"",places:["Trincomalee","Nilaveli","Pigeon Island","Jaffna Fort","Nallur Temple"],inc:["t21"]}
+];
+const RATES={
+ tiers:[{k:3,p:1450,s:450,l:"3-Star"},{k:4,p:1850,s:650,l:"4-Star"},{k:5,p:2650,s:950,l:"5-Star"}],
+ meals:[{k:"BB",l:"Bed & Breakfast",p:0},{k:"HB",l:"Half Board",p:20},{k:"FB",l:"Full Board",p:35},{k:"AI",l:"All Inclusive",p:65}],
+ route:[{k:"sig",l:"Sigiriya Rock Fortress",p:35,on:1},{k:"dam",l:"Dambulla Cave Temple",p:10,on:1},{k:"pol",l:"Polonnaruwa Ancient City",p:30,on:1},{k:"tooth",l:"Temple of the Sacred Tooth Relic",p:10,on:1},{k:"yala",l:"Yala National Park safari",p:60,on:1},{k:"train",l:"Scenic train, Kandy to Ella",p:[15,30],on:1}],
+ extra:[{k:"whale",l:"Whale watching, Mirissa",p:50,s:"In season"},{k:"pera",l:"Royal Botanical Gardens, Peradeniya",p:15},{k:"minn",l:"Minneriya National Park safari",p:50},{k:"anu",l:"Anuradhapura Ancient City",p:30},{k:"pinn",l:"Pinnawala Elephant Orphanage",p:20},{k:"turtle",l:"Turtle hatchery",p:10},{k:"bent",l:"Bentota water sports",p:[30,100]}],
+ fest:[{k:"xmas",l:"Christmas Eve gala dinner",p:75,hb:60},{k:"nye",l:"New Year's Eve gala dinner",p:95,hb:80}]
+};
+const POSTCARDS=[
+ {place:"Sigiriya",img:"sigiriya2",t:"A palace on a rock",f:"Sigiriya was built in the 5th century by King Kashyapa, on a granite rock about 180 m above the plain.",w:"Ayubowan",s:"aa-yu-bo-wan",m:"“May you live long”, the everyday greeting."},
+ {place:"Ella",img:"ninearch",t:"The bridge without steel",f:"The Nine Arch Bridge, finished in 1921, was built from brick, rock and cement without steel.",w:"Isthuthi",s:"is-thu-thi",m:"“Thank you.”"},
+ {place:"Hill country",img:"mist",t:"Where Ceylon tea began",f:"Commercial tea growing began in 1867, when James Taylor planted the first estate at Loolecondera.",w:"Thé",s:"tay",m:"“Tea.” Ask for kiri thé, strong and milky."},
+ {place:"Kandy",img:"kandy",t:"A city of processions",f:"Each July or August, Kandy's Esala Perahera fills the streets with drummers, dancers and decorated elephants.",w:"Kohomada?",s:"ko-ho-ma-da",m:"“How are you?” The reply is “Hondai”."},
+ {place:"Yala",img:"yala",t:"Leopard country",f:"Yala is known for one of the highest densities of leopards anywhere. Early game drives are the ones to catch.",w:"Aliya",s:"a-li-ya",m:"“Elephant.”"},
+ {place:"Mirissa",img:"mirissa",t:"Giants offshore",f:"From around November to April, Mirissa is one of the best places in the world to look for blue whales.",w:"Muhuda",s:"mu-hu-da",m:"“Sea.”"},
+ {place:"Galle",img:"galle",t:"Fort of many flags",f:"The Portuguese founded Galle Fort in the 16th century; the Dutch rebuilt it from 1649. It has been UNESCO-listed since 1988.",w:"Lassanai",s:"las-sa-nai",m:"“Beautiful.”"},
+ {place:"Dambulla",img:"dambulla",t:"Five caves of gold",f:"Dambulla holds more than 150 Buddha statues across five caves and is a UNESCO World Heritage Site.",w:"Pansala",s:"pan-sa-la",m:"“Temple.”"},
+ {place:"Polonnaruwa",img:"polon",t:"Carved from one rock",f:"Polonnaruwa's Gal Vihara has Buddha images carved into a single granite face in the 12th century.",w:"Gala",s:"ga-la",m:"“Rock”, as in Gal Vihara."},
+ {place:"South coast",img:"stilt",t:"Fishing on stilts",f:"On the south coast near Galle, fishermen still perch on wooden stilts in the surf, a technique that dates to the mid-20th century.",w:"Malu",s:"ma-lu",m:"“Fish.”"}
+];
+const img=k=>`img/${k}.jpg`;
+
+/* ---------- THEME ---------- */
+const mq=matchMedia("(prefers-color-scheme: dark)");
+const pref=()=>{try{return localStorage.getItem("dsc_theme")||"system"}catch(e){return "system"}};
+function setTheme(p){try{localStorage.setItem("dsc_theme",p)}catch(e){}const d=p==="dark"||(p==="system"&&mq.matches);document.documentElement.dataset.theme=d?"dark":"light";$("#themeLbl").textContent={system:"System",dark:"Dark",light:"Light"}[p];
+  $(".f-logo-l").style.display=d?"none":"";$(".f-logo-d").style.display=d?"":"none";if(window.__map)styleMap()}
+setTheme(pref());
+mq.addEventListener&&mq.addEventListener("change",()=>{if(pref()==="system")setTheme("system")});
+$("#themeBtn").addEventListener("click",()=>setTheme(document.documentElement.dataset.theme==="dark"?"light":"dark"));
+$("#themeBtn2").addEventListener("click",()=>{const o=["system","light","dark"];setTheme(o[(o.indexOf(pref())+1)%3])});
+
+/* ---------- LOCALE (language + currency) ---------- */
+const L=window.DSC_I18N,t=L.t;
+const pad=n=>String(n).padStart(2,"0");
+const daysLbl=n=>`${n} ${t("days")}`;
+
+/* ---------- NAV ---------- */
+const nav=$("#nav"),hero=$(".hero");
+function onScroll(){const h=hero.getBoundingClientRect().bottom;nav.classList.toggle("on-hero",h>70);
+  const enq=$("#enquire").getBoundingClientRect();$("#mcta").classList.toggle("hide",h>innerHeight*.6||enq.top<innerHeight)}
+addEventListener("scroll",onScroll,{passive:true});onScroll();
+const secs=["journeys","day-by-day","how","prices","destinations","know"];
+const sio=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting)$$(".links a").forEach(a=>a.classList.toggle("on",a.dataset.s===e.target.id))}),{rootMargin:"-45% 0px -50% 0px"});
+secs.forEach(id=>sio.observe(document.getElementById(id)));
+const menu=$("#sheetMenu");function setMenu(o){menu.classList.toggle("on",o);menu.setAttribute("aria-hidden",!o);$("#menuBtn").setAttribute("aria-expanded",o);document.body.style.overflow=o?"hidden":"";$("#menuBtn use").setAttribute("href",o?"#x":"#menu")}
+$("#menuBtn").addEventListener("click",()=>setMenu(!menu.classList.contains("on")));
+$$("#sheetMenu a").forEach(a=>a.addEventListener("click",()=>setMenu(false)));
+const rio=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add("in");rio.unobserve(e.target)}}),{rootMargin:"0px 0px -10% 0px"});
+$$(".rv").forEach(el=>rio.observe(el));
+new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting)e.target.classList.add("in")}),{threshold:.4}).observe($("#steps"));
+
+/* ---------- PLANNER selects (localised options) ---------- */
+function renderSelects(){
+  const keep=(id)=>$(id).value;
+  const l=keep("#fLen"),i=keep("#fInt"),w=keep("#fWho"),ew=$("#eWho").selectedIndex,et=$("#eTrip").value;
+  $("#fLen").innerHTML=`<option value="0">${t("opt.any")}</option>`+[7,10,14,21].map(d=>`<option value="${d}">${daysLbl(d)}</option>`).join("");
+  $("#fInt").innerHTML=[["",t("opt.all")],["culture",t("opt.culture")],["hills",t("opt.hills")],["wildlife",t("opt.wildlife")],["beach",t("opt.beach")],["north",t("opt.north")]].map(([v,x])=>`<option value="${v}">${esc(x)}</option>`).join("");
+  $("#fWho").innerHTML=[2,3,4,5,6].map(n=>`<option value="${n}">${n} ${t("adults")}</option>`).join("");
+  $("#eWho").innerHTML=[2,3,4,5].map(n=>`<option>${n} ${t("adults")}</option>`).join("")+`<option>6+ ${t("adults")}</option>`;
+  $("#eTrip").innerHTML=TOURS.map(x=>`<option value="${x.id}">${daysLbl(x.len)} · ${x.title}</option>`).join("")+`<option value="custom">${esc(t("f.custom"))}</option>`;
+  $("#fLen").value=l||"14";$("#fInt").value=i||"";$("#fWho").value=w||"2";$("#eWho").selectedIndex=Math.max(0,ew);if(et)$("#eTrip").value=et;
+}
+renderSelects();L.onChange(renderSelects);
+
+/* ---------- JOURNEYS ---------- */
+function renderJourneys(){
+  $("#jgrid").innerHTML=TOURS.filter(x=>x.id!=="t14").map(x=>`<button class="jcard in jitem" data-id="${x.id}" data-len="${x.len}">
+  <div class="ji"><img src="${img(x.img)}" alt="" loading="lazy"><span class="tag mono">${pad(x.len)} ${t("days")}</span><span class="go"><svg class="ico"><use href="#arrow-ur"/></svg></span></div>
+  <h4>${x.title}</h4><span class="r">${x.route[0]} → ${x.route[x.route.length-1]} · ${x.route.length} ${t("stops")}</span>
+  <span class="p"><span class="muted">${t("price")}</span><span>${t("onreq")}</span></span></button>`).join("");
+  $("#lenFilter").innerHTML=`<button aria-pressed="${!curLen}" data-f="0">${t("all")}</button>`+[7,10,14,21].map(d=>`<button aria-pressed="${curLen===d}" data-f="${d}">${daysLbl(d)}</button>`).join("");
+  $("#ftLen").textContent=`${daysLbl(14)} · 13 ${t("nights")}`;
+  filterLen(curLen);
+}
+let curLen=0;
+function filterLen(f){curLen=f;$$("#lenFilter button").forEach(b=>b.setAttribute("aria-pressed",+b.dataset.f===f));$$(".jitem").forEach(c=>c.classList.toggle("hide",!!f&&+c.dataset.len!==f));$(".feature").style.display=(!f||f===14)?"":"none"}
+renderJourneys();L.onChange(renderJourneys);
+$("#lenFilter").addEventListener("click",e=>{const b=e.target.closest("button");if(b){filterLen(+b.dataset.f);$("#matchNote").classList.remove("on");$$(".is-match").forEach(x=>x.classList.remove("is-match"))}});
+$("#jgrid").addEventListener("click",e=>{const c=e.target.closest(".jcard");if(c)openTour(c.dataset.id)});
+
+/* planner */
+let lastBest=null;
+function showMatch(){if(!lastBest)return;const b=lastBest,n=$("#matchNote");
+  n.innerHTML=`<span class="mono" style="color:var(--accent)">${t("best")}</span><span>${b.title} · ${daysLbl(b.len)}${b.from?` · ${t("from").toLowerCase()} ${L.money(b.from)} ${t("perperson")}`:""}</span><button type="button" id="mnClear">${t("clear")}</button>`;
+  $("#mnClear").onclick=()=>{n.classList.remove("on");$$(".is-match").forEach(x=>x.classList.remove("is-match"));lastBest=null}}
+$("#planner").addEventListener("submit",e=>{e.preventDefault();const len=+$("#fLen").value,int=$("#fInt").value,who=+$("#fWho").value;
+  let best=null,sc=-1e9;TOURS.forEach(x=>{let s=len?(x.len===len?10:-Math.abs(x.len-len)):0;if(int&&x.tags.includes(int))s+=6;if(int&&!x.tags.includes(int))s-=6;if(x.id==="t14")s+=.5;if(s>sc){sc=s;best=x}});
+  P.a=Math.max(2,who);calc();filterLen(0);$("#eTrip").value=best.id;$("#eWho").selectedIndex=Math.min(4,Math.max(0,who-2));
+  $$(".is-match").forEach(x=>x.classList.remove("is-match"));$(`.jitem[data-id="${best.id}"]`).classList.add("is-match");
+  lastBest=best;showMatch();$("#matchNote").classList.add("on");
+  document.getElementById("journeys").scrollIntoView({behavior:reduce?"auto":"smooth"})});
+L.onChange(()=>{if($("#matchNote").classList.contains("on")){showMatch();const el=lastBest&&$(`.jitem[data-id="${lastBest.id}"]`);el&&el.classList.add("is-match")}});
+
+/* drawer */
+const drawer=$("#drawer"),scrim=$("#scrim");let lastF,openId=null;
+function openTour(id){const x=TOURS.find(y=>y.id===id);openId=id;lastF=document.activeElement;
+  $("#drImg").src=img(x.img);$("#drSub").textContent=`${daysLbl(x.len)} · ${x.len-1} ${t("nights")}`;$("#drT").textContent=x.title;
+  $("#drBody").innerHTML=`<ul class="stops">${x.route.map(r=>`<li>${r}</li>`).join("")}</ul><ol class="dlist2">${x.days.map(d=>`<li><span class="mono">${t("day")} ${d[0]}</span><span>${d[1]}</span></li>`).join("")}</ol><p class="muted" style="font-size:13px;margin-top:20px">Duration, overnight stays and routing may vary with flight times, travel dates, season and your interests.</p>`;
+  const msg=`Hello DS Ceylon Adventures, I'm interested in the ${x.len}-day ${x.title}. Could you send me a quote?`;
+  $("#drFoot").innerHTML=`<div><b>${t("onreq")}</b></div><a class="btn btn-solid" href="${waLink(msg)}" target="_blank" rel="noopener"><svg class="ico"><use href="#wa"/></svg>${t("sum.cta")}</a>`;
+  if(!drawer.classList.contains("on")){drawer.classList.add("on");scrim.classList.add("on");document.body.style.overflow="hidden";setTimeout(()=>$("#drX").focus(),80)}}
+function closeDrawer(){if(!drawer.classList.contains("on"))return;drawer.classList.remove("on");scrim.classList.remove("on");document.body.style.overflow="";openId=null;lastF&&lastF.focus()}
+$("#drX").addEventListener("click",closeDrawer);
+L.onChange(()=>{if(openId)openTour(openId)});
+
+/* ---------- DAY BY DAY ---------- */
+$("#days").insertAdjacentHTML("beforeend",DAYS.map((d,i)=>`<li class="day" data-i="${i}">
+  <div class="dt mono"><span class="dn" data-n="${i+1}">Day ${pad(i+1)}</span><span>${d.p}</span></div>
+  <h3>${d.t}</h3><p>${d.x}</p>
+  ${d.stay?`<div class="stay"><span data-i18n="overnight">Overnight</span><span>${d.stay}</span><span data-i18n="hotels">Hotels</span><span>${d.hotel}</span></div>`:`<div class="stay"><span data-i18n="transfer">Transfer</span><span>${d.hotel}</span></div>`}
+  <div class="thumb"><img src="${img(d.img)}" alt="" loading="lazy"></div></li>`).join(""));
+function renderDayLabels(){$$(".day .dn").forEach(el=>el.textContent=t("dayn",{d:pad(+el.dataset.n)}));$("#hudN").textContent=t("hud",{d:pad(Math.max(cur,0)+1)})}
+let cur=-1,map=null,markers=[],is3d=true;
+function setDay(i){if(i===cur)return;cur=i;const d=DAYS[i];
+  $$(".day").forEach((el,j)=>el.classList.toggle("on",j===i));
+  const li=$$(".day")[i];$("#dayFill").style.height=(li.offsetTop+li.offsetHeight/2-10)+"px";
+  $("#hudN").textContent=t("hud",{d:pad(i+1)});$("#hudP").textContent=d.p;
+  $("#mapFallback").style.backgroundImage=`url(${img(d.img)})`;
+  markers.forEach((m,j)=>{const el=m.getElement();el.classList.toggle("on",j===i);el.classList.toggle("past",j<i)});
+  if(map){$("#bAll").setAttribute("aria-pressed","false");map.flyTo({center:d.ll,zoom:d.z,pitch:is3d?62:0,bearing:is3d?d.b:0,duration:reduce?0:2600,essential:true});updateRoute(i)}}
+const dio=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting)setDay(+e.target.dataset.i)}),{rootMargin:"-48% 0px -48% 0px"});
+$$(".day").forEach(el=>dio.observe(el));
+L.onChange(renderDayLabels);
+
+function routeGeo(n){return{type:"Feature",geometry:{type:"LineString",coordinates:DAYS.slice(0,n+1).map(d=>d.ll)}}}
+function updateRoute(i){const s=map.getSource("done");if(s)s.setData(routeGeo(i))}
+function styleMap(){if(!map||!map.getLayer("sat"))return;const dark=document.documentElement.dataset.theme==="dark";map.setPaintProperty("sat","raster-brightness-max",dark?.72:1);map.setPaintProperty("sat","raster-saturation",dark?-.25:-.05)}
+function initMap(){
+  const gl=(()=>{try{const c=document.createElement("canvas");return !!(c.getContext("webgl2")||c.getContext("webgl"))}catch(e){return false}})();
+  if(!window.maplibregl||!gl){$("#mapWrap").classList.add("nomap");return}
+  try{
+  map=new maplibregl.Map({container:"map",center:[80.7,7.6],zoom:7,pitch:45,bearing:0,attributionControl:false,cooperativeGestures:true,maxPitch:75,
+    style:{version:8,sources:{
+      sat:{type:"raster",tiles:["https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"],tileSize:256,maxzoom:18},
+      dem:{type:"raster-dem",tiles:["https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png"],encoding:"terrarium",tileSize:256,maxzoom:13}},
+      layers:[{id:"sat",type:"raster",source:"sat",paint:{"raster-saturation":-.05,"raster-contrast":.05}}],
+      terrain:{source:"dem",exaggeration:1.5},sky:{"sky-color":"#cfd8dc","horizon-color":"#e8e2d6","sky-horizon-blend":.6}}});
+  window.__map=map;
+  map.on("load",()=>{
+    map.addSource("all",{type:"geojson",data:{type:"Feature",geometry:{type:"LineString",coordinates:DAYS.map(d=>d.ll)}}});
+    map.addSource("done",{type:"geojson",data:routeGeo(Math.max(cur,0))});
+    map.addLayer({id:"all",type:"line",source:"all",paint:{"line-color":"#ffffff","line-opacity":.55,"line-width":2,"line-dasharray":[1.5,2]}});
+    map.addLayer({id:"done",type:"line",source:"done",paint:{"line-color":"#E8C67A","line-width":3.5}});
+    styleMap();
+    if(cur>=0){const d=DAYS[cur];map.jumpTo({center:d.ll,zoom:d.z,pitch:62,bearing:d.b})}
+  });
+  map.on("error",e=>{if(String(e.error&&e.error.message).match(/Failed to fetch|NetworkError/)&&!map.loaded())$("#mapWrap").classList.add("nomap")});
+  markers=DAYS.map((d,i)=>{const el=document.createElement("button");el.className="mk";el.setAttribute("aria-label",`Day ${i+1}, ${d.p}`);el.addEventListener("click",()=>$$(".day")[i].scrollIntoView({behavior:reduce?"auto":"smooth",block:"center"}));return new maplibregl.Marker({element:el}).setLngLat(d.ll).addTo(map)});
+  }catch(err){$("#mapWrap").classList.add("nomap")}
+}
+const mio=new IntersectionObserver(es=>{if(es[0].isIntersecting){initMap();mio.disconnect()}},{rootMargin:"600px"});mio.observe($("#mapWrap"));
+$("#b3d").addEventListener("click",()=>{is3d=!is3d;$("#b3d").setAttribute("aria-pressed",is3d);if(map){map.easeTo({pitch:is3d?62:0,bearing:is3d?DAYS[Math.max(cur,0)].b:0,duration:900});map.setTerrain(is3d?{source:"dem",exaggeration:1.5}:null)}});
+$("#bAll").addEventListener("click",()=>{if(!map)return;$("#bAll").setAttribute("aria-pressed","true");map.fitBounds([[79.7,5.85],[81.6,8.1]],{padding:40,pitch:is3d?40:0,bearing:0,duration:reduce?0:1800})});
+
+/* ---------- PRICE ---------- */
+const P={tier:3,a:2,s:0,meal:"BB",acts:new Set(RATES.route.filter(a=>a.on).map(a=>a.k))};
+const pv=a=>Array.isArray(a.p)?L.moneyRange(a.p[0],a.p[1]):L.money(a.p);
+function renderPriceUI(){
+  $("#pTier").innerHTML=RATES.tiers.map(x=>`<button data-tier="${x.k}" aria-pressed="${x.k===P.tier}"><b>${x.l}</b><small>${L.money(x.p)} ${t("pp")}</small></button>`).join("");
+  $("#pMeal").innerHTML=RATES.meals.map(m=>`<button data-meal="${m.k}" aria-pressed="${m.k===P.meal}"><b>${t("meal."+m.k)}</b><small>${m.p?L.money(m.p,{plus:true})+" / "+t("pr.night"):t("pr.included")}</small></button>`).join("");
+  const ck=(a,f)=>`<label class="chk"><input type="checkbox" data-act="${a.k}" ${P.acts.has(a.k)?"checked":""}><span class="t">${a.l}${a.s?`<small>${a.s}</small>`:""}${f?`<small>${L.money(a.hb)} ${t("pr.hb")}</small>`:""}</span><span class="v">${pv(a)}</span></label>`;
+  $("#pActs").innerHTML=`<h5>${t("pr.route")}</h5>${RATES.route.map(a=>ck(a)).join("")}<h5>${t("pr.addons")}</h5>${RATES.extra.map(a=>ck(a)).join("")}<h5>${t("pr.fest")}</h5>${RATES.fest.map(a=>ck(a,1)).join("")}`;
+}
+renderPriceUI();
+$("#pTier").addEventListener("click",e=>{const b=e.target.closest("button");if(b){P.tier=+b.dataset.tier;calc()}});
+$("#pMeal").addEventListener("click",e=>{const b=e.target.closest("button");if(b){P.meal=b.dataset.meal;calc()}});
+$$("[data-s]").forEach(b=>b.addEventListener("click",()=>{const d=+b.dataset.d;if(b.dataset.s==="a")P.a+=d;else P.s+=d;calc()}));
+$("#pActs").addEventListener("change",e=>{const k=e.target.dataset.act;if(k){e.target.checked?P.acts.add(k):P.acts.delete(k);calc()}});
+function calc(){
+  P.a=Math.max(2,Math.min(12,P.a));P.s=Math.max(0,Math.min(P.a,P.s));
+  $("#oA").value=P.a;$("#oS").value=P.s;
+  $$("[data-s]").forEach(b=>{const d=+b.dataset.d;b.disabled=b.dataset.s==="a"?(d<0?P.a<=2:P.a>=12):(d<0?P.s<=0:P.s>=P.a)});
+  $$("#pTier button").forEach(b=>b.setAttribute("aria-pressed",+b.dataset.tier===P.tier));$$("#pMeal button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.meal===P.meal));
+  const tr=RATES.tiers.find(x=>x.k===P.tier),m=RATES.meals.find(x=>x.k===P.meal),n=P.a;const Lines=[];let lo=0,hi=0;const add=(l,a,b=a)=>{Lines.push([l,a,b]);lo+=a;hi+=b};
+  add(t("ln.tier",{tier:tr.l,n}),tr.p*n);if(P.s)add(t("ln.single",{n:P.s}),tr.s*P.s);if(m.p)add(t("ln.meal",{meal:t("meal."+m.k),n}),m.p*13*n);
+  let a0=0,a1=0;[...RATES.route,...RATES.extra].forEach(a=>{if(P.acts.has(a.k)){const[x,y]=Array.isArray(a.p)?a.p:[a.p,a.p];a0+=x*n;a1+=y*n}});if(a1)add(t("ln.tix",{n}),a0,a1);
+  RATES.fest.forEach(f=>{if(P.acts.has(f.k))add(t("ln.fest",{name:f.l,n}),(P.meal==="HB"?f.hb:f.p)*n)});
+  $("#sumLines").innerHTML=Lines.map(x=>`<div class="ln"><span>${x[0]}</span><span>${L.moneyRange(x[1],x[2])}</span></div>`).join("");
+  $("#sumTot").textContent=L.moneyRange(lo,hi);$("#sumPP").textContent=`${L.moneyRange(lo/n,hi/n)} ${t("perperson")}`;
+  const usdTot=lo===hi?L.usd(lo):`${L.usd(lo)}–${Math.round(hi).toLocaleString("en-US")}`;
+  $("#sumUSD").textContent=L.S.cur==="USD"?t("sum.usd"):`${t("sum.usd")}: ${usdTot}. ${t("sum.approx",{cur:L.S.cur})}`;
+  const acts=[...RATES.route,...RATES.extra,...RATES.fest].filter(a=>P.acts.has(a.k)).map(a=>a.l).join(", ")||"none";
+  const body=`Hello DS Ceylon Adventures, I'd like a quote for the 14-day Grand Round:\n• ${tr.l} hotels\n• ${n} adults, ${P.s} single room(s)\n• Meal plan: ${m.l}\n• Tickets & extras: ${acts}\n• Online estimate: ${usdTot}${L.S.cur!=="USD"?` (shown to me as ${L.moneyRange(lo,hi)})`:""}\n• Language: ${L.LANGS[L.S.lang].n}\nMy travel dates are: `;
+  const wa=$("#sumWA");wa.href=waLink(body);wa.target="_blank";wa.rel="noopener";$("#sumMail").href=mailLink("Grand Round quote request",body);
+}
+calc();
+L.onChange(()=>{renderPriceUI();calc()});
+
+/* ---------- DESTINATIONS ---------- */
+const tname=id=>TOURS.find(x=>x.id===id).title;
+function renderDest(){const open=new Set($$(".ditem.open").map(x=>x.dataset.i));
+  $("#dlist").innerHTML=REGIONS.map((r,i)=>`<div class="ditem${open.has(String(i))?" open":""}" data-i="${i}" data-img="${r.img}"><button aria-expanded="${open.has(String(i))}"><span class="n">${pad(i+1)}.</span><span class="t">${r.t}</span><span class="c">${r.places.length} ${t("places")}</span><span class="pl"><svg class="ico"><use href="#plus"/></svg></span></button>
+  <div class="dbody"><div><div class="dinner"><span class="sp"></span><div><ul>${r.places.map(p=>`<li>${p}</li>`).join("")}</ul><p class="inc">${t("inc")}: ${r.inc.map(tname).join(", ")}</p></div>${r.img?`<img src="${img(r.img)}" alt="" loading="lazy">`:"<span></span>"}</div></div></div></div>`).join("");
+  bindHover()}
+$("#dlist").addEventListener("click",e=>{const b=e.target.closest(".ditem>button");if(!b)return;const it=b.parentElement,o=!it.classList.contains("open");it.classList.toggle("open",o);b.setAttribute("aria-expanded",o)});
+const hov=$("#hoverImg"),canHover=matchMedia("(hover:hover)").matches;
+function bindHover(){if(!canHover)return;$$(".ditem").forEach(it=>{it.addEventListener("mouseenter",()=>{if(it.dataset.img&&!it.classList.contains("open")){hov.querySelector("img").src=img(it.dataset.img);hov.classList.add("on")}});it.addEventListener("mouseleave",()=>hov.classList.remove("on"));it.addEventListener("click",()=>hov.classList.remove("on"))})}
+if(canHover)addEventListener("mousemove",e=>{if(hov.classList.contains("on")){hov.style.left=e.clientX+180+"px";hov.style.top=e.clientY+"px"}},{passive:true});
+renderDest();L.onChange(renderDest);
+
+/* ---------- POSTCARD ---------- */
+const now=new Date(),doy=Math.floor((now-new Date(now.getFullYear(),0,0))/864e5);let pc=doy%POSTCARDS.length;
+function showPC(){const p=POSTCARDS[pc];$("#pcImg").src=img(p.img);$("#pcImg").alt=p.place;$("#pcPlace").textContent=p.place;$("#pcTitle").textContent=p.t;$("#pcFact").textContent=p.f;$("#pcWord").textContent=p.w;$("#pcSay").textContent=t("pc.say")+": "+p.s;$("#pcMean").textContent=p.m;
+  $("#pcDate").textContent=now.toLocaleDateString(L.LANGS[L.S.lang].loc,{day:"numeric",month:"long"})}
+showPC();L.onChange(showPC);
+$("#pcPrev").addEventListener("click",()=>{pc=(pc+POSTCARDS.length-1)%POSTCARDS.length;showPC()});$("#pcNext").addEventListener("click",()=>{pc=(pc+1)%POSTCARDS.length;showPC()});
+
+/* ---------- CANCELLATION ---------- */
+function cancel(){const d=+$("#cRange").value;const[p,i]=d>=30?[0,0]:d>=15?[30,1]:d>=7?[75,2]:[100,3];
+  $("#cPct").textContent=p+"%";$("#cPct").style.color=p===0?"var(--ok)":p===100?"var(--bad)":"var(--ink)";$("#cWhen").textContent=`${t("c.charge")} · ${d>=45?"45+":d} ${t("c.before")}`;$("#cMsg").textContent=t("c.m"+i);$$("#cBars i").forEach((b,j)=>b.classList.toggle("on",j===i))}
+$("#cRange").addEventListener("input",cancel);cancel();L.onChange(cancel);
+
+/* ---------- ENQUIRY ---------- */
+let via="wa";$$("#enqForm [data-via]").forEach(b=>b.addEventListener("click",()=>via=b.dataset.via));
+$("#enqForm").addEventListener("submit",e=>{e.preventDefault();const name=$("#eName").value.trim().slice(0,80);if(!name){$("#eErr").textContent=t("f.err");$("#eName").focus();return}$("#eErr").textContent="";
+  const trip=$("#eTrip").value==="custom"?"Something tailor-made":(()=>{const x=TOURS.find(y=>y.id===$("#eTrip").value);return `${x.len} days · ${x.title}`})();
+  const month=$("#eMonth").value,who=$("#eWho").selectedIndex+2,msg=$("#eMsg").value.trim().slice(0,1000);
+  const body=`Hello DS Ceylon Adventures, my name is ${name}.\nJourney: ${trip}\nTravel month: ${month||"flexible"}\nTravellers: ${who===6?"6+":who} adults\nPreferred language: ${L.LANGS[L.S.lang].n}${msg?`\nNotes: ${msg}`:""}`;
+  if(via==="wa")window.open(waLink(body),"_blank","noopener");else location.href=mailLink("Sri Lanka tour enquiry",body)});
+
+/* ---------- FOOTER ---------- */
+function renderJrows(){$("#jrows").innerHTML=TOURS.map(x=>`<a href="#journeys" data-open="${x.id}"><span class="mono">${pad(x.len)} ${t("days")}</span><b>${x.title}</b><small>${x.from?t("from")+" "+L.money(x.from):t("onreq")}</small></a>`).join("")}
+renderJrows();L.onChange(renderJrows);
+$("#jrows").addEventListener("click",e=>{const a=e.target.closest("[data-open]");if(a&&a.dataset.open!=="t14"){e.preventDefault();openTour(a.dataset.open)}});
+Promise.resolve({"ninearch": {"title": "Demodara Nine Arch Bridge (35564604554).jpg", "art": "V. Epiney", "lic": "CC BY-SA 2.0", "page": "https://commons.wikimedia.org/wiki/File:Demodara_Nine_Arch_Bridge_(35564604554).jpg"}, "sigiriya": {"title": "Sigiriya Rock fortress.jpg", "art": "Chamixth", "lic": "CC BY-SA 4.0", "page": "https://commons.wikimedia.org/wiki/File:Sigiriya_Rock_fortress.jpg"}, "tea": {"title": "Tea plantation Haputale.jpg", "art": "Adbar", "lic": "CC BY-SA 3.0", "page": "https://commons.wikimedia.org/wiki/File:Tea_plantation_Haputale.jpg"}, "mist": {"title": "Haputale, Sri Lanka, Tea plantations.jpg", "art": "Vyacheslav Argenberg", "lic": "CC BY 4.0", "page": "https://commons.wikimedia.org/wiki/File:Haputale,_Sri_Lanka,_Tea_plantations.jpg"}, "train": {"title": "Sri Lanka, Haputale, Train in the mountains of Sri Lanka's 'Hill Country'.jpg", "art": "Vyacheslav Argenberg", "lic": "CC BY 4.0", "page": "https://commons.wikimedia.org/wiki/File:Sri_Lanka,_Haputale,_Train_in_the_mountains_of_Sri_Lanka%27s_%27Hill_Country%27.jpg"}, "galle": {"title": "Lighthouse Galle, Sri Lanka.jpg", "art": "Samal Nadeeshan", "lic": "CC BY-SA 4.0", "page": "https://commons.wikimedia.org/wiki/File:Lighthouse_Galle,_Sri_Lanka.jpg"}, "mirissa": {"title": "Mirissa beach, Srilanka.jpg", "art": "Abishek Palraj", "lic": "CC BY-SA 4.0", "page": "https://commons.wikimedia.org/wiki/File:Mirissa_beach,_Srilanka.jpg"}, "yala": {"title": "Sri Lankan Elephants in Yala National Park.jpg", "art": "C.J.Hatton", "lic": "CC BY-SA 4.0", "page": "https://commons.wikimedia.org/wiki/File:Sri_Lankan_Elephants_in_Yala_National_Park.jpg"}, "kandy": {"title": "Sacred Tooth Relic Temple 3.jpg", "art": "Philip Nalangan", "lic": "CC BY 4.0", "page": "https://commons.wikimedia.org/wiki/File:Sacred_Tooth_Relic_Temple_3.jpg"}, "polon": {"title": "LK-polonnaruwa-gal-vihara-01.jpg", "art": "Balou46", "lic": "CC BY-SA 3.0", "page": "https://commons.wikimedia.org/wiki/File:LK-polonnaruwa-gal-vihara-01.jpg"}, "dambulla": {"title": "Buddha Dambulla 7.jpg", "art": "Philip Nalangan", "lic": "CC BY 4.0", "page": "https://commons.wikimedia.org/wiki/File:Buddha_Dambulla_7.jpg"}, "stilt": {"title": "Fishermen practicing traditional stilt fishing near Galle, southern Sri Lanka, 20260207 1419 9457.jpg", "art": "Jakub Hałun", "lic": "CC BY 4.0", "page": "https://commons.wikimedia.org/wiki/File:Fishermen_practicing_traditional_stilt_fishing_near_Galle,_southern_Sri_Lanka,_20260207_1419_9457.jpg"}, "ella": {"title": "Ella Gap (Valley), Sri Lanka.jpg", "art": "Vyacheslav Argenberg", "lic": "CC BY 4.0", "page": "https://commons.wikimedia.org/wiki/File:Ella_Gap_(Valley),_Sri_Lanka.jpg"}, "sigiriya2": {"title": "Sigiriya Rock Fortress View from Pidurangala Rock.jpg", "art": "Gayomiw", "lic": "CC BY-SA 4.0", "page": "https://commons.wikimedia.org/wiki/File:Sigiriya_Rock_Fortress_View_from_Pidurangala_Rock.jpg"}}).then(c=>{if(!c)return;$("#credits").innerHTML="Photography: "+Object.values(c).map(x=>`<a href="${esc(x.page)}" target="_blank" rel="noopener">${esc(x.title.replace(/\.(jpe?g|png)$/i,""))}</a> by ${esc(x.art||"Wikimedia Commons")} (${esc(x.lic)})`).join(" · ")+". Remaining photos supplied by DS Ceylon Adventures."}).catch(()=>{});
+
+/* ---------- LANGUAGE & CURRENCY PICKER ---------- */
+const lm=$("#locModal");
+function renderLoc(){
+  const S=L.S;$("#locLbl").textContent=`${S.lang.toUpperCase()} · ${S.cur}`;$("#locLbl2").textContent=$("#locLbl3").textContent=`${L.LANGS[S.lang].n} · ${S.cur}`;
+  const det=L.detected;$("#locDet").textContent=det.region?t("loc.detected",{region:L.regionName(det.region,S.lang)})+` · ${L.LANGS[det.lang].n} · ${det.cur}`:"";
+  $("#locLangs").innerHTML=Object.entries(L.LANGS).map(([k,v])=>`<button role="radio" aria-checked="${k===S.lang}" data-lang="${k}" lang="${k}"><b>${v.n}</b></button>`).join("");
+  $("#locCurs").innerHTML=Object.entries(L.CURRENCIES).map(([k,v])=>`<button role="radio" aria-checked="${k===S.cur}" data-cur="${k}"><b>${k}</b><small>${v.n}</small></button>`).join("");
+  $("#locSrc").textContent=L.RATES_SOURCE;
+}
+L.onChange(renderLoc);
+function openLoc(){lastF=document.activeElement;setMenu(false);lm.classList.add("on");scrim.classList.add("on");document.body.style.overflow="hidden";setTimeout(()=>$("#locX").focus(),60)}
+function closeLoc(){if(!lm.classList.contains("on"))return;lm.classList.remove("on");scrim.classList.remove("on");document.body.style.overflow="";lastF&&lastF.focus()}
+["#locBtn","#locBtn2","#locBtn3"].forEach(s=>$(s).addEventListener("click",openLoc));
+$("#locX").addEventListener("click",closeLoc);$("#locDone").addEventListener("click",closeLoc);
+lm.addEventListener("click",e=>{const l=e.target.closest("[data-lang]"),c=e.target.closest("[data-cur]");if(l)L.set({lang:l.dataset.lang});if(c)L.set({cur:c.dataset.cur})});
+scrim.addEventListener("click",()=>{closeDrawer();closeLoc()});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"){closeDrawer();closeLoc();setMenu(false)}});
+
+L.apply();
+
+</script>
+</body>
+</html>
